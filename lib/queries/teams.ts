@@ -84,3 +84,13 @@ export async function getTeamById(teamId: string) {
     .single()
   return data
 }
+
+export async function updateTeamDetails(teamId: string, updates: any) {
+  const { data, error } = await supabase
+    .from('teams')
+    .update(updates)
+    .eq('id', teamId)
+    .select()
+    .single()
+  return { data, error }
+}

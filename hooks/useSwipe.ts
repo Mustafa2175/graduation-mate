@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useCurrentUser } from './useCurrentUser'
 import { getDiscoverProfiles } from '@/lib/queries/profiles'
-import { getSwipedIds, insertSwipe, checkMutualMatch } from '@/lib/queries/swipes'
+import { getSwipedIds, insertSwipe, checkMutualMatch, resetSwipes } from '@/lib/queries/swipes'
 import { createMatch } from '@/lib/queries/matches'
 import type { Profile } from '@/types'
 
@@ -13,30 +13,29 @@ export function useSwipe() {
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [currentIndex, setCurrentIndex] = useState(-1)
   const [isLoading, setIsLoading] = useState(true)
-  const [matchedProfile, setMatchedProfile] = useState<Profile | null>(null)
   const currentProfileId = useRef<string | null>(null)
 
-  useEffect(() => {
+  const loadProfiles = async () => {
     const user = getUser()
     if (!user) return
     currentProfileId.current = user.profileId
-
-    async function load() {
-      try {
-        const swipedIds = await getSwipedIds(user!.profileId)
-        const { data } = await getDiscoverProfiles(user!.profileId, swipedIds)
-        if (data) {
-          setProfiles(data as Profile[])
-          setCurrentIndex(data.length - 1)
-        }
-      } catch (e) {
-        console.error('Failed to load profiles', e)
-      } finally {
-        setIsLoading(false)
+    setIsLoading(true)
+    try {
+      const swipedIds = await getSwipedIds(user.profileId)
+      const { data } = await getDiscoverProfiles(user.profileId, swipedIds)
+      if (data) {
+        setProfiles(data as Profile[])
+        setCurrentIndex(data.length - 1)
       }
+    } catch (e) {
+      console.error('Failed to load profiles', e)
+    } finally {
+      setIsLoading(false)
     }
+  }
 
-    load()
+  useEffect(() => {
+    loadProfiles()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSwipe = async (direction: 'RIGHT' | 'LEFT', profile: Profile) => {
@@ -55,7 +54,6 @@ export function useSwipe() {
         const isMutual = await checkMutualMatch(pid, profile.id)
         if (isMutual) {
           await createMatch(pid, profile.id)
-          setMatchedProfile(profile)
         }
       }
     } catch (e) {
@@ -63,7 +61,23 @@ export function useSwipe() {
     }
   }
 
-  const clearMatch = () => setMatchedProfile(null)
+  const resetSwipeQueue = async () => {
+    const user = getUser()
+    if (!user) return
+    setIsLoading(true)
+    try {
+      await resetSwipes(user.profileId)
+      const { data } = await getDiscoverProfiles(user.profileId, [])
+      if (data) {
+        setProfiles(data as Profile[])
+        setCurrentIndex(data.length - 1)
+      }
+    } catch (e) {
+      console.error('Failed to reset swipes', e)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-  return { profiles, currentIndex, isLoading, matchedProfile, handleSwipe, clearMatch }
+  return { profiles, currentIndex, isLoading, handleSwipe, resetSwipeQueue }
 }

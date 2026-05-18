@@ -31,3 +31,10 @@ export async function checkMutualMatch(profileA: string, profileB: string): Prom
     .single()
   return !!data
 }
+
+export async function resetSwipes(fromProfileId: string) {
+  return supabase
+    .from('swipes')
+    .delete()
+    .eq('from_profile_id', fromProfileId)
+}

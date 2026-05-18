@@ -8,18 +8,14 @@ import SwipeCard from '@/components/discover/SwipeCard'
 import SwipeButtons from '@/components/discover/SwipeButtons'
 import Button from '@/components/ui/Button'
 import { getInitials } from '@/lib/utils'
-import type { Track } from '@/types'
 
-type TrackFilter = Track | 'ANY'
-type StatusFilter = 'ALL' | 'LOOKING' | 'LOOKING_FOR_MORE'
+
+
 
 export default function DiscoverPage() {
   const router = useRouter()
   const { getUser } = useCurrentUser()
-  const { profiles, currentIndex, isLoading, matchedProfile, handleSwipe, clearMatch } = useSwipe()
-  
-  const [trackFilter, setTrackFilter] = useState<TrackFilter>('ANY')
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
+  const { profiles, currentIndex, isLoading, handleSwipe, resetSwipeQueue } = useSwipe()
   
   const childRefs = useRef<any[]>([])
 
@@ -31,14 +27,8 @@ export default function DiscoverPage() {
 
   // Filter profiles based on selected filters, and keep only those up to currentIndex
   const remainingFiltered = useMemo(() => {
-    const remaining = profiles.filter((_, i) => i <= currentIndex)
-    return remaining.filter(p => {
-      if (trackFilter !== 'ANY' && p.track !== trackFilter) return false
-      if (statusFilter === 'LOOKING' && p.team_status !== 'LOOKING') return false
-      if (statusFilter === 'LOOKING_FOR_MORE' && p.team_status !== 'LOOKING_FOR_MORE') return false
-      return true
-    })
-  }, [profiles, currentIndex, trackFilter, statusFilter])
+    return profiles.filter((_, i) => i <= currentIndex)
+  }, [profiles, currentIndex])
 
   const currentProfile = remainingFiltered.length > 0 ? remainingFiltered[remainingFiltered.length - 1] : null
 
@@ -57,10 +47,7 @@ export default function DiscoverPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col h-[calc(100vh-80px)] p-6 animate-pulse">
-        <div className="flex gap-2 mb-6">
-          <div className="h-10 bg-gray-200 rounded-xl flex-1" />
-          <div className="h-10 bg-gray-200 rounded-xl flex-1" />
-        </div>
+        <div className="h-10 bg-gray-200 rounded-xl mb-6 w-full" />
         <div className="flex-1 bg-gray-200 rounded-2xl mb-8" />
         <div className="flex justify-center gap-8 mb-4">
           <div className="w-16 h-16 bg-gray-200 rounded-full" />
@@ -84,44 +71,27 @@ export default function DiscoverPage() {
         </h1>
       </div>
 
-      {/* Filters pill-style (Convix Pill) */}
-      <div className="flex gap-3 mb-6 shrink-0 relative bg-white/70 p-2 rounded-2xl border border-neutral-200/50 backdrop-blur-sm shadow-sm">
-        <select
-          value={trackFilter}
-          onChange={e => setTrackFilter(e.target.value as TrackFilter)}
-          className="flex-1 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#ef4d23] transition-all cursor-pointer shadow-sm"
-        >
-          <option value="ANY">Any Track</option>
-          <option value="AI">AI</option>
-          <option value="DATA_SCIENCE">Data Science</option>
-          <option value="CYBERSECURITY">Cybersecurity</option>
-          <option value="WEB_DEV">Web Dev</option>
-          <option value="MOBILE_DEV">Mobile Dev</option>
-          <option value="OTHER">Other</option>
-        </select>
-        
-        <select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value as StatusFilter)}
-          className="flex-1 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#ef4d23] transition-all cursor-pointer shadow-sm"
-        >
-          <option value="ALL">Any Status</option>
-          <option value="LOOKING">Looking for team</option>
-          <option value="LOOKING_FOR_MORE">Looking for more</option>
-        </select>
-      </div>
+
 
       {/* Swipe Area */}
       <div className="relative flex-1 w-full max-w-sm mx-auto min-h-[360px]">
         {remainingFiltered.length === 0 ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center space-y-4 bg-white/80 backdrop-blur-sm rounded-3xl border border-neutral-200/50 p-6 shadow-sm animate-in fade-in duration-300">
-            <div className="w-16 h-16 bg-[#f5f2ee] rounded-full flex items-center justify-center border border-neutral-100 shadow-inner">
-              <span className="text-2xl text-[#ef4d23]">✨</span>
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center space-y-6 bg-white/85 backdrop-blur-md rounded-3xl border border-neutral-200/50 p-8 shadow-sm animate-in fade-in duration-300">
+            <div className="w-20 h-20 bg-[#f5f2ee] rounded-full flex items-center justify-center border border-neutral-100 shadow-inner">
+              <span className="text-3xl text-[#ef4d23]">✨</span>
             </div>
-            <div>
-              <h3 className="font-semibold text-lg text-[#0b0f1a]">You've seen everyone!</h3>
-              <p className="text-xs text-neutral-500 max-w-xs mt-1">Check back later or adjust your filters to find more compatible teammates.</p>
+            <div className="space-y-2">
+              <h3 className="font-semibold text-xl text-[#0b0f1a] tracking-tight">You've seen everyone!</h3>
+              <p className="text-xs text-neutral-500 max-w-xs mx-auto leading-relaxed">
+                You have reached the end of the student list. To ensure your queue is never empty, reset the queue below to start swiping all users again!
+              </p>
             </div>
+            <button
+              onClick={resetSwipeQueue}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#ef4d23] px-8 py-3 text-xs font-bold text-white uppercase tracking-wider hover:bg-[#ef4d23]/95 transition-all shadow-[0_4px_16px_rgba(239,77,35,0.2)] cursor-pointer"
+            >
+              🔄 Reset Queue & Swipe Again
+            </button>
           </div>
         ) : (
           remainingFiltered.map((profile, i) => {
@@ -155,59 +125,6 @@ export default function DiscoverPage() {
         />
       </div>
 
-      {/* Match Modal */}
-      {matchedProfile && (
-        <div className="fixed inset-0 z-50 bg-[#0b0f1a]/60 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#f5f2ee] rounded-[2rem] border border-neutral-200/60 w-full max-w-sm p-8 text-center space-y-6 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
-            <div className="space-y-1">
-              <h2 className="text-3xl font-black text-[#0b0f1a] tracking-tight">
-                It's a <span className="font-instrument italic text-[1.1em] font-normal leading-none text-[#ef4d23]">Match</span>!
-              </h2>
-              <p className="text-xs text-neutral-500 font-medium">You and {matchedProfile.full_name} are ready to build the future.</p>
-            </div>
-            
-            <div className="flex justify-center items-center gap-4">
-              <div className="relative">
-                <div className="w-24 h-24 rounded-2xl flex items-center justify-center bg-white ring-4 ring-white shadow-lg overflow-hidden text-2xl font-bold text-gray-700">
-                  {matchedProfile.avatar_url ? (
-                    <img src={matchedProfile.avatar_url} alt="" className="w-full h-full object-cover animate-in fade-in duration-300" />
-                  ) : (
-                    getInitials(matchedProfile.full_name)
-                  )}
-                </div>
-                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-[#ef4d23] rounded-full border-2 border-white flex items-center justify-center text-white text-xs shadow-md animate-bounce">
-                  ❤️
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-3 pt-2">
-              {matchedProfile.whatsapp_number && (
-                <button
-                  onClick={() => window.open(`https://wa.me/${matchedProfile.whatsapp_number!.replace(/\D/g, '')}`)}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-[#ef4d23] px-6 py-3 text-sm font-semibold text-white hover:bg-[#ef4d23]/90 transition-all shadow-[0_4px_16px_rgba(239,77,35,0.25)] cursor-pointer"
-                >
-                  Message on WhatsApp
-                </button>
-              )}
-              {matchedProfile.linkedin_url && (
-                <button
-                  onClick={() => window.open(matchedProfile.linkedin_url!)}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-[#0b0f1a] px-6 py-3 text-sm font-semibold text-white hover:bg-[#0b0f1a]/90 transition-all shadow-md cursor-pointer"
-                >
-                  View LinkedIn
-                </button>
-              )}
-              <button
-                onClick={clearMatch}
-                className="w-full py-3 text-xs font-bold uppercase tracking-wider text-neutral-400 hover:text-[#0b0f1a] transition-colors"
-              >
-                Keep swiping
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

@@ -1,12 +1,6 @@
 // types/index.ts
 
-export type Track =
-  | 'AI'
-  | 'DATA_SCIENCE'
-  | 'CYBERSECURITY'
-  | 'WEB_DEV'
-  | 'MOBILE_DEV'
-  | 'OTHER'
+export type Track = string
 
 export type CommitmentLevel = 'LOW' | 'MEDIUM' | 'HIGH'
 export type TeamStatus = 'LOOKING' | 'COMPLETE' | 'LOOKING_FOR_MORE'
@@ -27,6 +21,7 @@ export interface Profile {
   is_available: boolean
   team_status: TeamStatus
   looking_for_role: string | null
+  team_size_needed: number
   avatar_url: string | null
   team_id: string | null
   created_at: string

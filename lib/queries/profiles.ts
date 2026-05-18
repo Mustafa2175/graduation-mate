@@ -12,6 +12,30 @@ export async function loginLookup(fullName: string, password: string) {
 }
 
 export async function getDiscoverProfiles(currentProfileId: string, swipedIds: string[]) {
+  // Fetch current user's team_id to filter out teammates
+  const { data: currentProfile } = await supabase
+    .from('profiles')
+    .select('team_id')
+    .eq('id', currentProfileId)
+    .single()
+
+  const excludeIds = [...swipedIds]
+
+  if (currentProfile?.team_id) {
+    const { data: teammates } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('team_id', currentProfile.team_id)
+
+    if (teammates) {
+      teammates.forEach((t) => {
+        if (!excludeIds.includes(t.id)) {
+          excludeIds.push(t.id)
+        }
+      })
+    }
+  }
+
   let query = supabase
     .from('profiles')
     .select(`
@@ -24,8 +48,8 @@ export async function getDiscoverProfiles(currentProfileId: string, swipedIds: s
     .eq('is_available', true)
     .neq('id', currentProfileId)
 
-  if (swipedIds.length > 0) {
-    query = query.not('id', 'in', `(${swipedIds.join(',')})`)
+  if (excludeIds.length > 0) {
+    query = query.not('id', 'in', `(${excludeIds.join(',')})`)
   }
 
   return query.order('created_at', { ascending: false })
@@ -36,5 +60,12 @@ export async function getProfileById(id: string) {
 }
 
 export async function upsertProfile(profile: Partial<Profile> & { id?: string }) {
-  return supabase.from('profiles').upsert(profile).select().single()
+  const { data, error } = await supabase.from('profiles').upsert(profile).select().single()
+  
+  if (error && error.message.includes('team_size_needed')) {
+    const { team_size_needed, ...fallbackProfile } = profile
+    return supabase.from('profiles').upsert(fallbackProfile).select().single()
+  }
+  
+  return { data, error }
 }

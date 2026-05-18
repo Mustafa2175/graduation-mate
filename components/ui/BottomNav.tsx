@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
-import { Compass, Heart, User } from 'lucide-react'
+import { Compass, Heart, User, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function BottomNav() {
@@ -25,6 +25,7 @@ export default function BottomNav() {
   const navItems = [
     { href: '/discover', icon: Compass, label: 'Discover' },
     { href: '/matches', icon: Heart, label: 'Matches' },
+    { href: '/my-team', icon: Users, label: 'My Team' },
     { href: '/profile/edit', icon: User, label: 'Profile' },
   ]
 

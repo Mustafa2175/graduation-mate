@@ -16,13 +16,65 @@ import Toggle from '@/components/ui/Toggle'
 import AvatarUpload from '@/components/profile/AvatarUpload'
 import { getInitials } from '@/lib/utils'
 
+const TRACK_OPTIONS = [
+  "Artificial Intelligence",
+  "Machine Learning",
+  "Deep Learning",
+  "Generative AI",
+  "Natural Language Processing",
+  "Computer Vision",
+  "Robotics",
+  "Data Science",
+  "Data Analysis",
+  "Data Engineering",
+  "Big Data Engineering",
+  "Business Intelligence",
+  "Software Engineering",
+  "Backend Development",
+  "Frontend Development",
+  "Full Stack Development",
+  "Mobile App Development",
+  "Android Development",
+  "iOS Development",
+  "Game Development",
+  "Web Development",
+  "Cloud Computing",
+  "DevOps",
+  "Site Reliability Engineering",
+  "Cybersecurity",
+  "Ethical Hacking",
+  "Digital Forensics",
+  "Network Security",
+  "Blockchain Development",
+  "Embedded Systems",
+  "Internet of Things (IoT)",
+  "Operating Systems",
+  "Database Administration",
+  "Database Engineering",
+  "Distributed Systems",
+  "Computer Networks",
+  "System Programming",
+  "Compiler Design",
+  "Quantum Computing",
+  "Bioinformatics",
+  "Human-Computer Interaction",
+  "UI/UX Design",
+  "AR/VR Development",
+  "Product Management",
+  "Technical Project Management",
+  "IT Support",
+  "IT Administration",
+  "Automation Engineering",
+  "MLOps",
+  "AIOps"
+]
+
 const schema = z.object({
   full_name: z.string().min(1, 'Full name is required'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   department: z.string().optional(),
   gpa: z.coerce.number().min(0).max(4).optional().or(z.literal('')),
-  track: z.enum(['AI', 'DATA_SCIENCE', 'CYBERSECURITY', 'WEB_DEV', 'MOBILE_DEV', 'OTHER']),
-  commitment_level: z.enum(['LOW', 'MEDIUM', 'HIGH']),
+  track: z.string().min(1, 'Track is required'),
   bio: z.string().max(300).optional(),
   linkedin_url: z.string().url('Must be a valid URL'),
   whatsapp_number: z.string().min(1, 'WhatsApp number is required'),
@@ -48,6 +100,12 @@ export default function ProfileEditPage() {
   const [skillInput, setSkillInput] = useState('')
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [trackSearchTerm, setTrackSearchTerm] = useState('')
+  const [isTrackDropdownOpen, setIsTrackDropdownOpen] = useState(false)
+  
+  const filteredTrackOptions = TRACK_OPTIONS.filter(option =>
+    option.toLowerCase().includes(trackSearchTerm.toLowerCase())
+  )
   
   const [isLoading, setIsLoading] = useState(true)
   const [profileId, setProfileId] = useState<string | null>(null)
@@ -63,6 +121,7 @@ export default function ProfileEditPage() {
     handleSubmit,
     watch,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormInput, unknown, FormData>({ resolver: zodResolver(schema) })
 
@@ -83,7 +142,6 @@ export default function ProfileEditPage() {
       department: data.department ?? '',
       gpa: data.gpa ?? '',
       track: data.track,
-      commitment_level: data.commitment_level,
       bio: data.bio ?? '',
       linkedin_url: data.linkedin_url ?? '',
       whatsapp_number: data.whatsapp_number ?? '',
@@ -93,6 +151,7 @@ export default function ProfileEditPage() {
     setSkills(data.skills ?? [])
     setIsAvailable(data.is_available)
     setAvatarPreview(data.avatar_url)
+    setTrackSearchTerm(data.track || '')
 
     if (data.team_id) {
       const t = await getTeamById(data.team_id)
@@ -106,6 +165,10 @@ export default function ProfileEditPage() {
 
     setIsLoading(false)
   }
+
+  useEffect(() => {
+    register('track')
+  }, [register])
 
   useEffect(() => {
     loadData()
@@ -150,7 +213,7 @@ export default function ProfileEditPage() {
         gpa: data.gpa ? Number(data.gpa) : null,
         track: data.track,
         skills,
-        commitment_level: data.commitment_level,
+        commitment_level: 'MEDIUM',
         bio: data.bio || null,
         linkedin_url: data.linkedin_url || null,
         whatsapp_number: data.whatsapp_number || null,
@@ -269,27 +332,47 @@ export default function ProfileEditPage() {
 
             <section className="space-y-5 liquid-glass rounded-3xl p-6 border border-white/5">
               <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="text-2xl font-normal text-white/90 tracking-wide border-b border-white/5 pb-2">Academic Track</h2>
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="track" className="text-white/70 font-medium text-xs tracking-wider uppercase">Track *</label>
-                <select id="track" {...register('track')} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white transition-all cursor-pointer">
-                  <option className="text-neutral-900" value="AI">AI</option>
-                  <option className="text-neutral-900" value="DATA_SCIENCE">Data Science</option>
-                  <option className="text-neutral-900" value="CYBERSECURITY">Cybersecurity</option>
-                  <option className="text-neutral-900" value="WEB_DEV">Web Dev</option>
-                  <option className="text-neutral-900" value="MOBILE_DEV">Mobile Dev</option>
-                  <option className="text-neutral-900" value="OTHER">Other</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-2 pt-2">
-                <span className="text-white/70 font-medium text-xs tracking-wider uppercase">Commitment Level *</span>
-                <div className="flex gap-4">
-                  {(['LOW', 'MEDIUM', 'HIGH'] as const).map(level => (
-                    <label key={level} className="flex items-center gap-2 cursor-pointer group">
-                      <input type="radio" value={level} {...register('commitment_level')} className="w-4 h-4 accent-white bg-white/5 border-white/10" />
-                      <span className="text-sm text-neutral-300 group-hover:text-white transition-colors capitalize">{level.charAt(0) + level.slice(1).toLowerCase()}</span>
-                    </label>
-                  ))}
+              
+              <div className="relative flex flex-col gap-1.5 w-full">
+                <label htmlFor="track-search" className="text-white/70 font-medium text-xs tracking-wider uppercase">Track *</label>
+                <div className="relative">
+                  <input
+                    id="track-search"
+                    type="text"
+                    value={trackSearchTerm}
+                    onChange={e => {
+                      setTrackSearchTerm(e.target.value)
+                      setValue('track', e.target.value, { shouldValidate: true })
+                      setIsTrackDropdownOpen(true)
+                    }}
+                    onFocus={() => setIsTrackDropdownOpen(true)}
+                    onBlur={() => {
+                      setTimeout(() => setIsTrackDropdownOpen(false), 200)
+                    }}
+                    placeholder="Search for your desired track (e.g. Data Science)"
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-white transition-all"
+                    autoComplete="off"
+                  />
+                  
+                  {isTrackDropdownOpen && filteredTrackOptions.length > 0 && (
+                    <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border border-white/10 bg-neutral-950 py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-none">
+                      {filteredTrackOptions.map((option) => (
+                        <li
+                          key={option}
+                          onMouseDown={() => {
+                            setTrackSearchTerm(option)
+                            setValue('track', option, { shouldValidate: true })
+                            setIsTrackDropdownOpen(false)
+                          }}
+                          className="relative cursor-pointer select-none px-4 py-2.5 transition-colors text-white hover:bg-white/10"
+                        >
+                          {option}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
+                {errors.track && <p className="text-red-400 text-xs mt-1">{errors.track.message}</p>}
               </div>
             </section>
 
