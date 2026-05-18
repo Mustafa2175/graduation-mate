@@ -1,65 +1,103 @@
-import Image from "next/image";
+'use client'
 
-export default function Home() {
+import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import Link from 'next/link'
+
+function TypingMessages() {
+  const messages = ["Team not found.", "Finding team...", "Team not found."];
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  const [displayedText, setDisplayedText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    const currentMessage = messages[currentMessageIndex];
+
+    if (!isDeleting && displayedText === currentMessage) {
+      timeoutId = setTimeout(() => setIsDeleting(true), 2000);
+    } else if (isDeleting && displayedText === "") {
+      setIsDeleting(false);
+      setCurrentMessageIndex((prev) => (prev + 1) % messages.length);
+    } else {
+      timeoutId = setTimeout(() => {
+        const nextText = isDeleting 
+          ? currentMessage.substring(0, displayedText.length - 1)
+          : currentMessage.substring(0, displayedText.length + 1);
+        setDisplayedText(nextText);
+      }, isDeleting ? 50 : 100);
+    }
+
+    return () => clearTimeout(timeoutId);
+  }, [displayedText, isDeleting, currentMessageIndex, messages]);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="absolute left-[48.5%] md:left-[47.5%] lg:left-[48.5%] -translate-x-1/2 bottom-[32%] z-30 w-[110px] sm:w-[130px] flex justify-start text-left">
+      <p className="font-nokia text-[#2A3616] text-[10px] sm:text-[14px] leading-tight break-words min-h-[1.5em]">
+        {displayedText}
+        <motion.span
+          animate={{ opacity: [0, 1, 0] }}
+          transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+          className="inline-block w-1.5 h-3 bg-[#2A3616] ml-1 align-middle"
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </p>
     </div>
-  );
+  )
+}
+
+function Navbar() {
+  return (
+    <div className="fixed top-6 left-1/2 -translate-x-1/2 w-[95%] max-w-5xl z-50 pointer-events-none">
+      <nav className="pointer-events-auto backdrop-blur-md rounded-full bg-transparent border border-black/10 flex justify-between items-center px-6 py-3">
+        <div className="font-instrument text-[28px] tracking-tight text-[#1a1a1a]">
+          TeamUp.
+        </div>
+
+        <Link href="/login" className="group relative bg-[#0871E7] rounded-full px-6 py-2 shadow-[inset_0_-4px_4px_rgba(255,255,255,0.39)] outline-1 outline-[#0871E7] -outline-offset-1 overflow-hidden pointer-events-auto">
+          <div className="absolute w-[80%] h-4 left-[10%] top-[1px] bg-gradient-to-b from-[#DEF0FC] to-transparent rounded-[12px] transition-transform duration-300 group-hover:scale-x-105" />
+          <span className="relative z-10 font-sans text-[14px] text-white">Sign up</span>
+        </Link>
+      </nav>
+    </div>
+  )
+}
+
+function Hero() {
+  return (
+    <div className="relative min-h-screen bg-[#F3F4ED] pt-32 md:pt-40 flex flex-col items-center justify-start overflow-hidden">
+      <div className="absolute inset-0 z-0">
+        <video 
+          autoPlay 
+          loop 
+          muted 
+          playsInline 
+          className="w-full h-full object-cover"
+          src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260427_054418_a6d194f0-ac86-4df9-abe5-ded73e596d7c.mp4"
+        />
+        <div className="absolute inset-0 bg-white/5" />
+      </div>
+
+      <div className="relative z-20 pointer-events-none text-center px-4 w-full flex flex-col items-center">
+        <motion.h1 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+          className="font-instrument text-[38px] md:text-[56px] lg:text-[72px] leading-[0.85] tracking-tight text-[#1a1a1a] mb-6"
+        >
+          Find your team. <br /> Build something great.
+        </motion.h1>
+      </div>
+
+      <TypingMessages />
+    </div>
+  )
+}
+
+export default function LandingPage() {
+  return (
+    <main className="font-sans antialiased fixed inset-0 z-[100] bg-[#F3F4ED] selection:bg-[#0871E7] selection:text-white overflow-y-auto">
+      <Navbar />
+      <Hero />
+    </main>
+  )
 }
