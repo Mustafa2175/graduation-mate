@@ -260,7 +260,7 @@ export default function StepSkills({ draft, onNext, onBack }: StepProps) {
                       className={cn(
                         "relative cursor-pointer select-none px-4 py-2.5 transition-colors text-black",
                         highlightedIndex === index
-                          ? "bg-violet-600 text-white font-semibold"
+                          ? "bg-[var(--brand)] text-white font-semibold"
                           : "hover:bg-neutral-50"
                       )}
                     >

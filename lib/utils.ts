@@ -16,20 +16,22 @@ export function getInitials(name: string): string {
     .slice(0, 2)
 }
 
-export const TRACK_LABELS: Record<Track, string> = {
-  AI: 'AI',
-  DATA_SCIENCE: 'Data Science',
-  CYBERSECURITY: 'Cybersecurity',
-  WEB_DEV: 'Web Dev',
-  MOBILE_DEV: 'Mobile Dev',
-  OTHER: 'Other',
-}
-
-export const TRACK_COLORS: Record<Track, string> = {
-  AI: 'bg-purple-100 text-purple-800',
-  DATA_SCIENCE: 'bg-blue-100 text-blue-800',
-  CYBERSECURITY: 'bg-red-100 text-red-800',
-  WEB_DEV: 'bg-orange-100 text-orange-800',
-  MOBILE_DEV: 'bg-teal-100 text-teal-800',
-  OTHER: 'bg-gray-100 text-gray-700',
+export function getTrackBadge(track: string | null | undefined) {
+  const t = track?.toLowerCase() || '';
+  if (t.includes('ai') || t.includes('intelligence') || t.includes('learning') || t.includes('vision') || t.includes('robotics')) {
+    return { label: track, color: 'bg-purple-100 text-purple-800' }
+  }
+  if (t.includes('data')) {
+    return { label: track, color: 'bg-blue-100 text-blue-800' }
+  }
+  if (t.includes('cyber') || t.includes('security') || t.includes('hacking') || t.includes('forensics')) {
+    return { label: track, color: 'bg-red-100 text-red-800' }
+  }
+  if (t.includes('web') || t.includes('frontend') || t.includes('backend') || t.includes('stack') || t.includes('cloud') || t.includes('devops')) {
+    return { label: track, color: 'bg-orange-100 text-orange-800' }
+  }
+  if (t.includes('mobile') || t.includes('ios') || t.includes('android')) {
+    return { label: track, color: 'bg-teal-100 text-teal-800' }
+  }
+  return { label: track || 'Other', color: 'bg-gray-100 text-gray-700' }
 }

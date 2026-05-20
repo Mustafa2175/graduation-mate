@@ -1,13 +1,17 @@
 // components/discover/SwipeButtons.tsx
-import { X, Heart } from 'lucide-react'
+import { X, Heart } from "lucide-react";
 
 interface SwipeButtonsProps {
-  onLeft: () => void
-  onRight: () => void
-  disabled?: boolean
+  onLeft: () => void;
+  onRight: () => void;
+  disabled?: boolean;
 }
 
-export default function SwipeButtons({ onLeft, onRight, disabled }: SwipeButtonsProps) {
+export default function SwipeButtons({
+  onLeft,
+  onRight,
+  disabled,
+}: SwipeButtonsProps) {
   return (
     <div className="flex items-center justify-center gap-6">
       {/* Skip / Left */}
@@ -32,5 +36,5 @@ export default function SwipeButtons({ onLeft, onRight, disabled }: SwipeButtons
         <Heart className="w-6 h-6 fill-white stroke-none" />
       </button>
     </div>
-  )
+  );
 }

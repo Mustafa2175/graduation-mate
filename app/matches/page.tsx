@@ -1,122 +1,153 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
-import { getMatchesForProfile, updateContactSharing } from '@/lib/queries/matches'
-import { getTeamById, getTeamMembers } from '@/lib/queries/teams'
-import { getInitials, TRACK_COLORS, TRACK_LABELS, cn } from '@/lib/utils'
-import { MessageCircle, Briefcase, Lock, Unlock } from 'lucide-react'
-import Badge from '@/components/ui/Badge'
-import SkillBadge from '@/components/profile/SkillBadge'
-import Button from '@/components/ui/Button'
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import {
+  getMatchesForProfile,
+  resolveProfileContacts,
+  updateContactSharing,
+} from "@/lib/queries/matches";
+import { getTeamById, getTeamMembers } from "@/lib/queries/teams";
+import { getInitials, getTrackBadge, cn } from "@/lib/utils";
+import { MessageCircle, Briefcase, Lock, Unlock } from "lucide-react";
+import Badge from "@/components/ui/Badge";
+import SkillBadge from "@/components/profile/SkillBadge";
+import Button from "@/components/ui/Button";
 
 // Deterministic background color from name
 const AVATAR_BG = [
-  'bg-violet-500',
-  'bg-blue-500',
-  'bg-emerald-500',
-  'bg-orange-500',
-  'bg-pink-500',
-  'bg-teal-500',
-]
+  "bg-violet-500",
+  "bg-blue-500",
+  "bg-emerald-500",
+  "bg-orange-500",
+  "bg-pink-500",
+  "bg-teal-500",
+];
 function getAvatarBg(name: string) {
-  const code = name.charCodeAt(0) + (name.charCodeAt(1) || 0)
-  return AVATAR_BG[code % AVATAR_BG.length]
+  const code = name.charCodeAt(0) + (name.charCodeAt(1) || 0);
+  return AVATAR_BG[code % AVATAR_BG.length];
 }
 
 function timeAgo(dateString: string) {
-  const date = new Date(dateString)
-  const now = new Date()
-  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
-  
-  if (seconds < 60) return 'Just now'
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  if (days < 30) return `${days}d ago`
-  return date.toLocaleDateString()
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (seconds < 60) return "Just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return date.toLocaleDateString();
 }
 
 export default function MatchesPage() {
-  const router = useRouter()
-  const { getUser } = useCurrentUser()
-  const [matches, setMatches] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [currentUserId, setCurrentUserId] = useState<string>('')
-  const [togglingMap, setTogglingMap] = useState<Record<string, boolean>>({})
+  const router = useRouter();
+  const { getFreshUser } = useCurrentUser();
+  const [matches, setMatches] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [togglingMap, setTogglingMap] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    const user = getUser()
-    if (!user) {
-      router.replace('/login')
-      return
-    }
-    setCurrentUserId(user.profileId)
-
-    getMatchesForProfile(user.profileId).then(async ({ data }) => {
-      if (data) {
-        const matchesWithTeams = await Promise.all(
-          data.map(async (match: any) => {
-            const p1 = Array.isArray(match.profile1) ? match.profile1[0] : match.profile1
-            const p2 = Array.isArray(match.profile2) ? match.profile2[0] : match.profile2
-            if (!p1 || !p2) return match
-
-            const isP1 = p1.id === user.profileId
-            const profile = isP1 ? p2 : p1
-            
-            if (profile && profile.team_id) {
-              try {
-                const team = await getTeamById(profile.team_id)
-                const members = await getTeamMembers(profile.team_id)
-                const teammates = members.filter((m: any) => m.id !== profile.id)
-                return {
-                  ...match,
-                  teamId: profile.team_id,
-                  teamName: team?.name || 'Team',
-                  teammates: teammates || [],
-                }
-              } catch (err) {
-                console.error('Error fetching team members for match card:', err)
-              }
-            }
-            return match
-          })
-        )
-        setMatches(matchesWithTeams)
+    const loadMatches = async () => {
+      const user = await getFreshUser();
+      if (!user) {
+        setIsLoading(false);
+        router.replace("/login");
+        return;
       }
-      setIsLoading(false)
-    })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+      setCurrentUserId(user.profileId);
 
-  const handleToggleSharing = async (matchId: string, isP1: boolean, currentlyShared: boolean) => {
-    setTogglingMap(prev => ({ ...prev, [matchId]: true }))
+      try {
+        const { data, error } = await getMatchesForProfile(user.profileId);
+        if (error) throw error;
+        if (data) {
+          const matchesWithTeams = await Promise.all(
+            data.map(async (match: any) => {
+              const p1 = Array.isArray(match.profile1)
+                ? match.profile1[0]
+                : match.profile1;
+              const p2 = Array.isArray(match.profile2)
+                ? match.profile2[0]
+                : match.profile2;
+              if (!p1 || !p2) return match;
+
+              const isP1 = p1.id === user.profileId;
+              const profile = isP1 ? p2 : p1;
+
+              if (profile && profile.team_id) {
+                try {
+                  const team = await getTeamById(profile.team_id);
+                  const members = await getTeamMembers(profile.team_id);
+                  const teammates = members.filter(
+                    (m: any) => m.id !== profile.id,
+                  );
+                  return {
+                    ...match,
+                    teamId: profile.team_id,
+                    teamName: team?.name || "Team",
+                    teammates: teammates || [],
+                  };
+                } catch (err) {
+                  console.error(
+                    "Error fetching team members for match card:",
+                    err,
+                  );
+                }
+              }
+              return match;
+            }),
+          );
+          setMatches(matchesWithTeams);
+        }
+      } catch (err) {
+        console.error("Failed to load matches:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadMatches();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleToggleSharing = async (
+    matchId: string,
+    isP1: boolean,
+    currentlyShared: boolean,
+  ) => {
+    setTogglingMap((prev) => ({ ...prev, [matchId]: true }));
     try {
-      const nextShared = !currentlyShared
-      const { error } = await updateContactSharing(matchId, isP1, nextShared)
+      const nextShared = !currentlyShared;
+      const { error } = await updateContactSharing(matchId, isP1, nextShared);
       if (!error) {
-        setMatches(prev =>
-          prev.map(m => {
+        setMatches((prev) =>
+          prev.map((m) => {
             if (m.id === matchId) {
               return {
                 ...m,
-                profile1_contact_shared: isP1 ? nextShared : m.profile1_contact_shared,
-                profile2_contact_shared: !isP1 ? nextShared : m.profile2_contact_shared,
-              }
+                profile1_contact_shared: isP1
+                  ? nextShared
+                  : m.profile1_contact_shared,
+                profile2_contact_shared: !isP1
+                  ? nextShared
+                  : m.profile2_contact_shared,
+              };
             }
-            return m
-          })
-        )
+            return m;
+          }),
+        );
       }
     } catch (err) {
-      console.error('Error toggling contact sharing:', err)
+      console.error("Error toggling contact sharing:", err);
     } finally {
-      setTogglingMap(prev => ({ ...prev, [matchId]: false }))
+      setTogglingMap((prev) => ({ ...prev, [matchId]: false }));
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -126,12 +157,12 @@ export default function MatchesPage() {
           <div className="w-60 h-4 bg-gray-200 rounded" />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          {[1, 2, 3, 4].map(i => (
+          {[1, 2, 3, 4].map((i) => (
             <div key={i} className="bg-gray-200 rounded-2xl aspect-[3/4]" />
           ))}
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -139,7 +170,9 @@ export default function MatchesPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Your Matches</h1>
         <p className="text-sm text-gray-500 mt-1">
-          {matches.length} {matches.length === 1 ? 'person wants' : 'people want'} to team up with you
+          {matches.length}{" "}
+          {matches.length === 1 ? "person wants" : "people want"} to team up
+          with you
         </p>
       </div>
 
@@ -149,7 +182,9 @@ export default function MatchesPage() {
             👻
           </div>
           <div className="space-y-2">
-            <h3 className="font-semibold text-gray-900 text-lg">No matches yet</h3>
+            <h3 className="font-semibold text-gray-900 text-lg">
+              No matches yet
+            </h3>
             <p className="text-sm text-gray-500 max-w-[200px] mx-auto">
               Keep swiping on the discover page to find your perfect teammates.
             </p>
@@ -162,16 +197,26 @@ export default function MatchesPage() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pb-10">
           {matches.map((match) => {
             // Determine which profile is the other person
-            const p1 = Array.isArray(match.profile1) ? match.profile1[0] : match.profile1
-            const p2 = Array.isArray(match.profile2) ? match.profile2[0] : match.profile2
-            if (!p1 || !p2) return null
+            const p1 = Array.isArray(match.profile1)
+              ? match.profile1[0]
+              : match.profile1;
+            const p2 = Array.isArray(match.profile2)
+              ? match.profile2[0]
+              : match.profile2;
+            if (!p1 || !p2) return null;
 
-            const isP1 = p1.id === currentUserId
-            const profile = isP1 ? p2 : p1
+            const isP1 = p1.id === currentUserId;
+            const profile = isP1 ? p2 : p1;
+            const { whatsapp_number, linkedin_url } =
+              resolveProfileContacts(profile);
 
-            const isMyContactShared = isP1 ? match.profile1_contact_shared : match.profile2_contact_shared
-            const isTheirContactShared = isP1 ? match.profile2_contact_shared : match.profile1_contact_shared
-            const contactVisible = isMyContactShared && isTheirContactShared
+            const isMyContactShared = isP1
+              ? match.profile1_contact_shared
+              : match.profile2_contact_shared;
+            const isTheirContactShared = isP1
+              ? match.profile2_contact_shared
+              : match.profile1_contact_shared;
+            const contactVisible = isMyContactShared && isTheirContactShared;
 
             return (
               <div
@@ -189,8 +234,8 @@ export default function MatchesPage() {
                   ) : (
                     <div
                       className={cn(
-                        'w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-base ring-2 ring-gray-50',
-                        getAvatarBg(profile.full_name)
+                        "w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-base ring-2 ring-gray-50",
+                        getAvatarBg(profile.full_name),
                       )}
                     >
                       {getInitials(profile.full_name)}
@@ -208,8 +253,8 @@ export default function MatchesPage() {
 
                 {/* Track Badge */}
                 <div className="px-3 pt-2 flex justify-center">
-                  <Badge color={TRACK_COLORS[profile.track as keyof typeof TRACK_COLORS]}>
-                    {TRACK_LABELS[profile.track as keyof typeof TRACK_LABELS]}
+                  <Badge color={getTrackBadge(profile.track).color}>
+                    {getTrackBadge(profile.track).label}
                   </Badge>
                 </div>
 
@@ -236,9 +281,11 @@ export default function MatchesPage() {
                       </p>
                       {match.teammates && match.teammates.length > 0 ? (
                         <div className="mt-1 flex items-center gap-1.5">
-                          <span className="text-[9px] text-gray-400 font-semibold shrink-0">Classmates:</span>
+                          <span className="text-[9px] text-gray-400 font-semibold shrink-0">
+                            Classmates:
+                          </span>
                           <div className="flex -space-x-1.5 overflow-hidden">
-                            {match.teammates.map((t: any) => (
+                            {match.teammates.map((t: any) =>
                               t.avatar_url ? (
                                 <img
                                   key={t.id}
@@ -253,17 +300,19 @@ export default function MatchesPage() {
                                   title={t.full_name}
                                   className={cn(
                                     "inline-block h-5 w-5 rounded-full ring-2 ring-white flex items-center justify-center text-[8px] font-black text-white",
-                                    getAvatarBg(t.full_name)
+                                    getAvatarBg(t.full_name),
                                   )}
                                 >
                                   {getInitials(t.full_name)}
                                 </div>
-                              )
-                            ))}
+                              ),
+                            )}
                           </div>
                         </div>
                       ) : (
-                        <p className="text-[9px] text-gray-400 italic mt-0.5">No teammates joined yet</p>
+                        <p className="text-[9px] text-gray-400 italic mt-0.5">
+                          No teammates joined yet
+                        </p>
                       )}
                     </div>
                     {match.teamId && (
@@ -272,7 +321,13 @@ export default function MatchesPage() {
                         className="p-1.5 rounded-lg bg-orange-100 hover:bg-orange-200 text-[#ef4d23] transition-colors shrink-0 flex items-center justify-center"
                         title="View Team Details"
                       >
-                        <svg className="w-3.5 h-3.5 stroke-current fill-none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                        <svg
+                          className="w-3.5 h-3.5 stroke-current fill-none"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          viewBox="0 0 24 24"
+                        >
                           <path d="M5 12h14" />
                           <path d="m12 5 7 7-7 7" />
                         </svg>
@@ -284,20 +339,25 @@ export default function MatchesPage() {
                 {/* Gated Contact Info Switch & Status Badge */}
                 <div className="px-3 pb-3 pt-2 border-t border-gray-100 flex flex-col space-y-2 bg-gray-50/50">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Share My Contact</span>
+                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+                      Share My Contact
+                    </span>
                     <button
-                      onClick={() => handleToggleSharing(match.id, isP1, isMyContactShared)}
+                      onClick={() =>
+                        handleToggleSharing(match.id, isP1, isMyContactShared)
+                      }
                       disabled={togglingMap[match.id]}
                       className={cn(
-                        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2",
-                        isMyContactShared ? "bg-violet-600" : "bg-gray-200",
-                        togglingMap[match.id] && "opacity-50 cursor-not-allowed"
+                        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2",
+                        isMyContactShared ? "bg-[var(--brand)]" : "bg-gray-200",
+                        togglingMap[match.id] &&
+                          "opacity-50 cursor-not-allowed",
                       )}
                     >
                       <span
                         className={cn(
                           "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out",
-                          isMyContactShared ? "translate-x-4" : "translate-x-0"
+                          isMyContactShared ? "translate-x-4" : "translate-x-0",
                         )}
                       />
                     </button>
@@ -323,27 +383,35 @@ export default function MatchesPage() {
                 <div className="p-2 bg-gray-50 border-t border-gray-100 flex gap-2 min-h-[46px] items-center justify-center">
                   {contactVisible ? (
                     <>
-                      {profile.whatsapp_number && (
+                      {whatsapp_number && (
                         <button
-                          onClick={() => window.open(`https://wa.me/${profile.whatsapp_number.replace(/\D/g, '')}`)}
+                          onClick={() =>
+                            window.open(
+                              `https://wa.me/${whatsapp_number.replace(/\D/g, "")}`,
+                            )
+                          }
                           className="flex-1 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl flex items-center justify-center transition-colors shadow-sm"
                           title="WhatsApp"
                         >
                           <MessageCircle className="w-4 h-4 mr-1" />
-                          <span className="text-[11px] font-bold">WhatsApp</span>
+                          <span className="text-[11px] font-bold">
+                            WhatsApp
+                          </span>
                         </button>
                       )}
-                      {profile.linkedin_url && (
+                      {linkedin_url && (
                         <button
-                          onClick={() => window.open(profile.linkedin_url)}
+                          onClick={() => window.open(linkedin_url)}
                           className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center transition-colors shadow-sm"
                           title="LinkedIn"
                         >
                           <Briefcase className="w-4 h-4 mr-1" />
-                          <span className="text-[11px] font-bold">LinkedIn</span>
+                          <span className="text-[11px] font-bold">
+                            LinkedIn
+                          </span>
                         </button>
                       )}
-                      {!profile.whatsapp_number && !profile.linkedin_url && (
+                      {!whatsapp_number && !linkedin_url && (
                         <div className="flex-1 py-2 text-[10px] text-center text-gray-400 font-medium italic">
                           No links provided
                         </div>
@@ -352,15 +420,17 @@ export default function MatchesPage() {
                   ) : (
                     <div className="flex-1 flex items-center justify-center py-2 bg-gray-100 text-gray-400 rounded-xl gap-1 cursor-not-allowed">
                       <Lock className="w-3.5 h-3.5" />
-                      <span className="text-[10px] font-extrabold tracking-wider uppercase">Contact Gated</span>
+                      <span className="text-[10px] font-extrabold tracking-wider uppercase">
+                        Contact Gated
+                      </span>
                     </div>
                   )}
                 </div>
               </div>
-            )
+            );
           })}
         </div>
       )}
     </div>
-  )
+  );
 }

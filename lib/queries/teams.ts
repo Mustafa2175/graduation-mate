@@ -21,18 +21,18 @@ export async function createTeam(name: string, creatorProfileId: string) {
   return team
 }
 
-export async function joinTeam(targetProfileIdToJoin: string, currentProfileId: string) {
-  const { data: targetProfile, error } = await supabase
-    .from('profiles')
-    .select('team_id')
-    .eq('id', targetProfileIdToJoin)
+export async function joinTeam(teamIdToJoin: string, currentProfileId: string) {
+  const { data: team, error } = await supabase
+    .from('teams')
+    .select('id')
+    .eq('id', teamIdToJoin)
     .single()
 
-  if (error || !targetProfile?.team_id) {
-    throw new Error('That user is not in a team, or ID is invalid.')
+  if (error || !team) {
+    throw new Error('That team does not exist, or ID is invalid.')
   }
 
-  const teamId = targetProfile.team_id
+  const teamId = team.id
 
   await supabase
     .from('team_members')

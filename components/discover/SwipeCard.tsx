@@ -1,26 +1,27 @@
 // components/discover/SwipeCard.tsx
-'use client'
+"use client";
 
-import { forwardRef, useState } from 'react'
-import TinderCard from 'react-tinder-card'
-import ProfileCard from '@/components/profile/ProfileCard'
-import type { Profile } from '@/types'
-import { cn } from '@/lib/utils'
+import { forwardRef, useState } from "react";
+import TinderCard from "react-tinder-card";
+import ProfileCard from "@/components/profile/ProfileCard";
+import type { Profile } from "@/types";
+import { cn } from "@/lib/utils";
 
 interface SwipeCardProps {
-  profile: Profile
-  onSwipe: (direction: 'RIGHT' | 'LEFT') => void
-  isTop: boolean
+  profile: Profile;
+  onSwipe: (direction: "RIGHT" | "LEFT") => void;
+  isTop: boolean;
 }
 
-const SwipeCard = forwardRef<any, SwipeCardProps>(({ profile, onSwipe, isTop }, ref) => {
-  const [dragDir, setDragDir] = useState<'RIGHT' | 'LEFT' | null>(null)
+const SwipeCard = forwardRef<any, SwipeCardProps>(
+  ({ profile, onSwipe, isTop }, ref) => {
+    const [dragDir, setDragDir] = useState<"RIGHT" | "LEFT" | null>(null);
 
-  const handleSwipe = (dir: string) => {
-    const direction = dir === 'right' ? 'RIGHT' : 'LEFT'
-    onSwipe(direction)
-    setDragDir(null)
-  }
+    const handleSwipe = (dir: string) => {
+      const direction = dir === "right" ? "RIGHT" : "LEFT";
+      onSwipe(direction);
+      setDragDir(null);
+    };
 
   return (
     <TinderCard
@@ -47,11 +48,12 @@ const SwipeCard = forwardRef<any, SwipeCardProps>(({ profile, onSwipe, isTop }, 
           </div>
         )}
 
-        <ProfileCard profile={profile} />
-      </div>
-    </TinderCard>
-  )
-})
+          <ProfileCard profile={profile} />
+        </div>
+      </TinderCard>
+    );
+  },
+);
 
-SwipeCard.displayName = 'SwipeCard'
-export default SwipeCard
+SwipeCard.displayName = "SwipeCard";
+export default SwipeCard;

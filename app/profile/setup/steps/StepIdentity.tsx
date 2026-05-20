@@ -9,6 +9,7 @@ import { StepProps } from './types'
 
 const schema = z.object({
   full_name: z.string().min(1, 'Full name is required'),
+  email: z.string().email('Valid email is required'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   department: z.string().min(1, 'Department is required'),
   gpa: z.coerce.number().min(0).max(4, 'GPA must be between 0 and 4').optional().or(z.literal('')),
@@ -26,6 +27,7 @@ export default function StepIdentity({ draft, onNext }: StepProps) {
     resolver: zodResolver(schema),
     defaultValues: {
       full_name: draft.full_name || '',
+      email: draft.email || '',
       password: draft.password || '',
       department: draft.department || '',
       gpa: draft.gpa !== undefined && draft.gpa !== null ? String(draft.gpa) : '',
@@ -35,6 +37,7 @@ export default function StepIdentity({ draft, onNext }: StepProps) {
   const onSubmit = (data: FormData) => {
     onNext({
       full_name: data.full_name,
+      email: data.email,
       password: data.password,
       department: data.department || '',
       gpa: data.gpa ? Number(data.gpa) : 0,
@@ -56,6 +59,16 @@ export default function StepIdentity({ draft, onNext }: StepProps) {
           className="bg-black/[0.02] border-black/10 text-black placeholder-black/30 focus:border-black/35 focus:ring-1 focus:ring-black focus:bg-white"
           {...register('full_name')}
           error={errors.full_name?.message}
+        />
+        <Input
+          id="email"
+          label="University Email *"
+          type="email"
+          placeholder="e.g. ahmed@university.edu"
+          labelClassName="text-black/75 font-semibold text-xs tracking-wider uppercase"
+          className="bg-black/[0.02] border-black/10 text-black placeholder-black/30 focus:border-black/35 focus:ring-1 focus:ring-black focus:bg-white"
+          {...register('email')}
+          error={errors.email?.message}
         />
         
         <Input
