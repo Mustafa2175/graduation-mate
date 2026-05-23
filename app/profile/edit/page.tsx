@@ -682,7 +682,7 @@ export default function ProfileEditPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full relative overflow-hidden rounded-full py-4 text-base font-semibold tracking-wide text-neutral-950 bg-white hover:bg-neutral-100 active:scale-[0.98] transition-all cursor-pointer shadow-xl mt-4 flex items-center justify-center"
+              className="w-full relative overflow-hidden rounded-full py-4 text-base font-semibold tracking-wide text-neutral-950 bg-white hover:bg-neutral-100 active:scale-[0.98] transition-all cursor-pointer shadow-sm mt-4 flex items-center justify-center"
             >
               {isSubmitting ? "Saving Changes..." : "Save Profile Changes"}
             </button>

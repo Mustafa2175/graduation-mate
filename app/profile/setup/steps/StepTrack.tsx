@@ -158,7 +158,7 @@ export default function StepTrack({ draft, onNext, onBack }: StepProps) {
             />
             
             {isOpen && filteredOptions.length > 0 && (
-              <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border border-black/5 bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-none">
+              <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border border-black/5 bg-white py-1 text-sm shadow-sm ring-1 ring-black/5 focus:outline-none">
                 {filteredOptions.map((option, index) => (
                   <li
                     key={option}

@@ -4,17 +4,16 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import {
-  getMatchesForProfile,
-  resolveProfileContacts,
-  updateContactSharing,
-} from "@/lib/queries/matches";
+import { getConnections, resolveProfileContacts } from "@/lib/queries/matches";
+import { insertSwipe, checkMutualMatch } from "@/lib/queries/swipes";
+import { createMatch } from "@/lib/queries/matches";
 import { getTeamById, getTeamMembers } from "@/lib/queries/teams";
 import { getInitials, getTrackBadge, cn } from "@/lib/utils";
-import { MessageCircle, Briefcase, Lock, Unlock } from "lucide-react";
+import { MessageCircle, Briefcase, Lock, Unlock, Check, X } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import SkillBadge from "@/components/profile/SkillBadge";
 import Button from "@/components/ui/Button";
+import { toast } from "react-hot-toast";
 
 // Deterministic background color from name
 const AVATAR_BG = [
@@ -31,6 +30,7 @@ function getAvatarBg(name: string) {
 }
 
 function timeAgo(dateString: string) {
+  if (!dateString) return "Just now";
   const date = new Date(dateString);
   const now = new Date();
   const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
@@ -48,387 +48,354 @@ function timeAgo(dateString: string) {
 export default function MatchesPage() {
   const router = useRouter();
   const { getFreshUser } = useCurrentUser();
-  const [matches, setMatches] = useState<any[]>([]);
+  
+  const [mutual, setMutual] = useState<any[]>([]);
+  const [incoming, setIncoming] = useState<any[]>([]);
+  const [outgoing, setOutgoing] = useState<any[]>([]);
+  
   const [isLoading, setIsLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string>("");
-  const [togglingMap, setTogglingMap] = useState<Record<string, boolean>>({});
+  const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+  const [activeTab, setActiveTab] = useState<"invites" | "matches" | "sent">("invites");
+
+  const loadConnections = async (updateTabs = true) => {
+    const user = await getFreshUser();
+    if (!user) {
+      setIsLoading(false);
+      router.replace("/login");
+      return;
+    }
+    setCurrentUserId(user.profileId);
+
+    try {
+      const data = await getConnections(user.profileId);
+      
+      const fetchTeams = async (list: any[]) => {
+        return Promise.all(
+          list.map(async (item: any) => {
+            const profile = item.profile;
+            if (profile && profile.team_id) {
+              try {
+                const team = await getTeamById(profile.team_id);
+                const members = await getTeamMembers(profile.team_id);
+                const teammates = members.filter((m: any) => m.id !== profile.id);
+                return { ...item, teamName: team?.name || "Team", teammates: teammates || [] };
+              } catch (err) {
+                console.error("Error fetching team", err);
+              }
+            }
+            return item;
+          })
+        );
+      };
+
+      const mutualWithTeams = await fetchTeams(data.mutual);
+      const incomingWithTeams = await fetchTeams(data.incoming);
+      const outgoingWithTeams = await fetchTeams(data.outgoing);
+
+      setMutual(mutualWithTeams);
+      setIncoming(incomingWithTeams);
+      setOutgoing(outgoingWithTeams);
+      
+      if (updateTabs) {
+        if (incomingWithTeams.length > 0) setActiveTab("invites");
+        else if (mutualWithTeams.length > 0) setActiveTab("matches");
+        else setActiveTab("invites");
+      }
+      
+    } catch (err) {
+      console.error("Failed to load connections:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadMatches = async () => {
-      const user = await getFreshUser();
-      if (!user) {
-        setIsLoading(false);
-        router.replace("/login");
-        return;
-      }
-      setCurrentUserId(user.profileId);
-
-      try {
-        const { data, error } = await getMatchesForProfile(user.profileId);
-        if (error) throw error;
-        if (data) {
-          const matchesWithTeams = await Promise.all(
-            data.map(async (match: any) => {
-              const p1 = Array.isArray(match.profile1)
-                ? match.profile1[0]
-                : match.profile1;
-              const p2 = Array.isArray(match.profile2)
-                ? match.profile2[0]
-                : match.profile2;
-              if (!p1 || !p2) return match;
-
-              const isP1 = p1.id === user.profileId;
-              const profile = isP1 ? p2 : p1;
-
-              if (profile && profile.team_id) {
-                try {
-                  const team = await getTeamById(profile.team_id);
-                  const members = await getTeamMembers(profile.team_id);
-                  const teammates = members.filter(
-                    (m: any) => m.id !== profile.id,
-                  );
-                  return {
-                    ...match,
-                    teamId: profile.team_id,
-                    teamName: team?.name || "Team",
-                    teammates: teammates || [],
-                  };
-                } catch (err) {
-                  console.error(
-                    "Error fetching team members for match card:",
-                    err,
-                  );
-                }
-              }
-              return match;
-            }),
-          );
-          setMatches(matchesWithTeams);
-        }
-      } catch (err) {
-        console.error("Failed to load matches:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadMatches();
+    loadConnections();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleToggleSharing = async (
-    matchId: string,
-    isP1: boolean,
-    currentlyShared: boolean,
-  ) => {
-    setTogglingMap((prev) => ({ ...prev, [matchId]: true }));
+  const handleAccept = async (profileId: string) => {
+    setActionLoading(prev => ({ ...prev, [profileId]: true }));
+    
+    // Optimistic UI Update
+    const acceptedInvite = incoming.find(item => item.profile.id === profileId);
+    if (acceptedInvite) {
+      setIncoming(prev => prev.filter(item => item.profile.id !== profileId));
+      setMutual(prev => [{
+        id: `optimistic-${profileId}`,
+        type: 'MUTUAL',
+        profile: acceptedInvite.profile,
+        matched_at: new Date().toISOString(),
+        teamName: acceptedInvite.teamName,
+        teamId: acceptedInvite.teamId,
+        teammates: acceptedInvite.teammates,
+        profile1_contact_shared: true,
+        profile2_contact_shared: true,
+      }, ...prev]);
+      setActiveTab("matches");
+    }
+
     try {
-      const nextShared = !currentlyShared;
-      const { error } = await updateContactSharing(matchId, isP1, nextShared);
-      if (!error) {
-        setMatches((prev) =>
-          prev.map((m) => {
-            if (m.id === matchId) {
-              return {
-                ...m,
-                profile1_contact_shared: isP1
-                  ? nextShared
-                  : m.profile1_contact_shared,
-                profile2_contact_shared: !isP1
-                  ? nextShared
-                  : m.profile2_contact_shared,
-              };
-            }
-            return m;
-          }),
-        );
+      const { error: swipeError } = await insertSwipe(currentUserId, profileId, "RIGHT");
+      if (swipeError && swipeError.code !== '23505') {
+        throw new Error(`Swipe Error: ${swipeError.message}`);
       }
-    } catch (err) {
-      console.error("Error toggling contact sharing:", err);
+
+      const isMutual = await checkMutualMatch(currentUserId, profileId);
+      if (isMutual) {
+        const { error: matchError } = await createMatch(currentUserId, profileId);
+        if (matchError && matchError.code !== '23505') {
+          throw new Error(`Match Error: ${matchError.message}`);
+        }
+        toast.success("Match created! You can now contact each other.");
+      } else {
+        toast.error("Invite is no longer valid.");
+        loadConnections(); // Revert optimistic update
+        return;
+      }
+      
+      // Load connections in background without updating tabs to prevent layout shift
+      loadConnections(false); 
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Failed to accept invite");
+      // Revert optimistic update
+      loadConnections();
     } finally {
-      setTogglingMap((prev) => ({ ...prev, [matchId]: false }));
+      setActionLoading(prev => ({ ...prev, [profileId]: false }));
+    }
+  };
+
+  const handleDecline = async (profileId: string) => {
+    setActionLoading(prev => ({ ...prev, [profileId]: true }));
+
+    // Optimistic Update
+    setIncoming(prev => prev.filter(item => item.profile.id !== profileId));
+
+    try {
+      const { error: swipeError } = await insertSwipe(currentUserId, profileId, "LEFT");
+      if (swipeError && swipeError.code !== '23505') {
+        throw new Error(`Swipe Error: ${swipeError.message}`);
+      }
+      loadConnections(false);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Failed to skip invite");
+      loadConnections(); // Revert
+    } finally {
+      setActionLoading(prev => ({ ...prev, [profileId]: false }));
     }
   };
 
   if (isLoading) {
     return (
-      <div className="p-6 h-[calc(100vh-80px)] overflow-y-auto space-y-6 animate-pulse">
+      <div className="p-6 h-[calc(100vh-80px)] overflow-y-auto space-y-6">
         <div className="space-y-2">
           <div className="w-40 h-8 bg-gray-200 rounded-lg" />
           <div className="w-60 h-4 bg-gray-200 rounded" />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="flex gap-4">
+           <div className="w-20 h-6 bg-gray-200 rounded" />
+           <div className="w-20 h-6 bg-gray-200 rounded" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-gray-200 rounded-2xl aspect-[3/4]" />
+            <div key={i} className="bg-gray-200 rounded-2xl aspect-[3/4] animate-pulse" />
           ))}
         </div>
       </div>
     );
   }
 
+  const renderProfileCard = (item: any, type: "invites" | "matches" | "sent") => {
+    const profile = item.profile;
+    const { whatsapp_number, linkedin_url } = resolveProfileContacts(profile);
+    const isActionLoading = actionLoading[profile.id];
+
+    return (
+      <div key={item.id} className="bg-white/70 backdrop-blur-2xl rounded-[24px] border border-white/60 shadow-sm overflow-hidden flex flex-col">
+        {/* Header: Avatar & Name */}
+        <div className="p-3 pb-0 flex flex-col items-center text-center space-y-2">
+          {profile.avatar_url ? (
+            <img src={profile.avatar_url} alt={profile.full_name} className="w-14 h-14 rounded-full object-cover ring-2 ring-gray-50" />
+          ) : (
+            <div className={cn("w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-base ring-2 ring-gray-50", getAvatarBg(profile.full_name))}>
+              {getInitials(profile.full_name)}
+            </div>
+          )}
+          <div>
+            <h3 className="font-bold text-gray-900 text-sm line-clamp-1">{profile.full_name}</h3>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {type === "invites" ? `Interested ${timeAgo(item.matched_at)}` : type === "matches" ? `Matched ${timeAgo(item.matched_at)}` : `Sent ${timeAgo(item.matched_at)}`}
+            </p>
+          </div>
+        </div>
+
+        {/* Track Badge */}
+        <div className="px-3 pt-2 flex justify-center">
+          <Badge color={getTrackBadge(profile.track).color}>{getTrackBadge(profile.track).label}</Badge>
+        </div>
+
+        {/* Skills */}
+        <div className="px-3 py-2 flex-1 flex flex-col justify-center min-h-[50px]">
+          <div className="flex flex-wrap gap-1 justify-center">
+            {profile.skills?.slice(0, 3).map((skill: string) => (
+              <SkillBadge key={skill} skill={skill} />
+            ))}
+            {profile.skills?.length > 3 && (
+              <span className="text-xs text-gray-400 self-center">+{profile.skills.length - 3}</span>
+            )}
+          </div>
+        </div>
+
+        {/* Bio (Emphasize collaboration on invites) */}
+        {type === "invites" && profile.bio && (
+           <div className="px-3 py-2 text-xs text-gray-600 italic text-center border-t border-gray-50 line-clamp-3">
+             "{profile.bio}"
+           </div>
+        )}
+
+        {/* Team Details */}
+        {item.teamName && (
+          <div className="px-3 py-2.5 border-t border-gray-100 bg-neutral-50 text-left flex items-center justify-between gap-2">
+            <div>
+              <p className="text-xs font-black text-[var(--color-brand)] uppercase tracking-wider line-clamp-1">
+                👥 Team: {item.teamName}
+              </p>
+              {item.teammates && item.teammates.length > 0 ? (
+                 <div className="mt-1 flex items-center gap-1.5">
+                   <span className="text-xs text-gray-400 font-semibold shrink-0">Classmates:</span>
+                   <div className="flex -space-x-1.5 overflow-hidden">
+                     {item.teammates.map((t: any) =>
+                       t.avatar_url ? (
+                         <img key={t.id} src={t.avatar_url} alt={t.full_name} title={t.full_name} className="inline-block h-5 w-5 rounded-full ring-2 ring-white object-cover" />
+                       ) : (
+                         <div key={t.id} title={t.full_name} className={cn("inline-block h-5 w-5 rounded-full ring-2 ring-white flex items-center justify-center text-[8px] font-black text-white", getAvatarBg(t.full_name))}>
+                           {getInitials(t.full_name)}
+                         </div>
+                       )
+                     )}
+                   </div>
+                 </div>
+              ) : (
+                <p className="text-xs text-gray-400 italic mt-0.5">No teammates joined yet</p>
+              )}
+            </div>
+            {item.teamId && (
+              <Link href={`/teams/${item.teamId}`} className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-[var(--color-brand)] transition-colors shrink-0 flex items-center justify-center" title="View Team Details">
+                <svg className="w-3.5 h-3.5 stroke-current fill-none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+                </svg>
+              </Link>
+            )}
+          </div>
+        )}
+
+        {/* Actions based on type */}
+        <div className="p-2 bg-gray-50 border-t border-gray-100 flex gap-2 min-h-[46px] items-center justify-center">
+          {type === "matches" && (
+            <>
+              {whatsapp_number && (
+                <button onClick={() => window.open(`https://wa.me/${whatsapp_number.replace(/\D/g, "")}`)} className="flex-1 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl flex items-center justify-center transition-colors shadow-sm" title="WhatsApp">
+                  <MessageCircle className="w-4 h-4 mr-1" />
+                  <span className="text-[11px] font-bold">WhatsApp</span>
+                </button>
+              )}
+              {linkedin_url && (
+                <button onClick={() => window.open(linkedin_url)} className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center transition-colors shadow-sm" title="LinkedIn">
+                  <Briefcase className="w-4 h-4 mr-1" />
+                  <span className="text-[11px] font-bold">LinkedIn</span>
+                </button>
+              )}
+              {!whatsapp_number && !linkedin_url && (
+                <div className="flex-1 py-2 text-xs text-center text-gray-400 font-medium italic">No links provided</div>
+              )}
+            </>
+          )}
+
+          {type === "invites" && (
+            <>
+              <button disabled={isActionLoading} onClick={() => handleDecline(profile.id)} className="flex-1 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl flex items-center justify-center transition-colors shadow-sm disabled:opacity-50" title="Skip">
+                <X className="w-4 h-4 mr-1" />
+                <span className="text-[11px] font-bold">Skip</span>
+              </button>
+              <button disabled={isActionLoading} onClick={() => handleAccept(profile.id)} className="flex-1 py-2 bg-[var(--color-brand)] hover:opacity-90 text-white rounded-xl flex items-center justify-center transition-colors shadow-sm disabled:opacity-50" title="Accept & Connect">
+                <Check className="w-4 h-4 mr-1" />
+                <span className="text-[11px] font-bold">Accept & Connect</span>
+              </button>
+            </>
+          )}
+
+          {type === "sent" && (
+            <div className="flex-1 flex items-center justify-center py-2 bg-gray-100 text-gray-400 rounded-xl gap-1 cursor-not-allowed">
+              <Lock className="w-3.5 h-3.5" />
+              <span className="text-xs font-extrabold tracking-wider uppercase">Pending...</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderTabButton = (id: "invites" | "matches" | "sent", label: string, count: number) => (
+    <button
+      onClick={() => setActiveTab(id)}
+      className={cn(
+        "flex-1 pb-3 text-sm font-semibold transition-colors border-b-2 relative",
+        activeTab === id ? "border-[var(--color-brand)] text-[var(--color-brand)]" : "border-transparent text-gray-500 hover:text-gray-700"
+      )}
+    >
+      <span className="flex items-center justify-center gap-1.5">
+        {label}
+        {count > 0 && (
+          <span className={cn(
+            "px-1.5 py-0.5 rounded-full text-[10px] font-bold",
+            activeTab === id ? "bg-[var(--color-brand)] text-white" : "bg-gray-200 text-gray-600"
+          )}>
+            {count}
+          </span>
+        )}
+      </span>
+    </button>
+  );
+
+  const activeList = activeTab === "invites" ? incoming : activeTab === "matches" ? mutual : outgoing;
+
   return (
     <div className="p-6 h-[calc(100vh-80px)] overflow-y-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Your Matches</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          {matches.length}{" "}
-          {matches.length === 1 ? "person wants" : "people want"} to team up
-          with you
-        </p>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Connections</h1>
+        <p className="text-sm text-gray-500 mt-1">Manage your incoming invites and mutual matches</p>
       </div>
 
-      {matches.length === 0 ? (
+      <div className="flex border-b border-gray-200 mb-6">
+        {renderTabButton("invites", "Invites", incoming.length)}
+        {renderTabButton("matches", "Matches", mutual.length)}
+        {renderTabButton("sent", "Sent", outgoing.length)}
+      </div>
+
+      {activeList.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center space-y-6 bg-white rounded-3xl border border-gray-100 shadow-sm">
           <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-3xl">
             👻
           </div>
           <div className="space-y-2">
             <h3 className="font-semibold text-gray-900 text-lg">
-              No matches yet
+              {activeTab === "invites" ? "No invites yet" : activeTab === "matches" ? "No matches yet" : "No sent requests"}
             </h3>
             <p className="text-sm text-gray-500 max-w-[200px] mx-auto">
-              Keep swiping on the discover page to find your perfect teammates.
+              {activeTab === "invites" ? "Keep your profile updated to attract teammates." : activeTab === "matches" ? "Accept an invite or match on discover to start collaborating." : "Start discovering profiles to send invites."}
             </p>
           </div>
-          <Link href="/discover" className="block w-full max-w-[200px]">
-            <Button>Keep Swiping</Button>
-          </Link>
+          {activeTab !== "invites" && (
+            <Link href="/discover" className="block w-full max-w-[200px]">
+              <Button>Find Teammates</Button>
+            </Link>
+          )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pb-10">
-          {matches.map((match) => {
-            // Determine which profile is the other person
-            const p1 = Array.isArray(match.profile1)
-              ? match.profile1[0]
-              : match.profile1;
-            const p2 = Array.isArray(match.profile2)
-              ? match.profile2[0]
-              : match.profile2;
-            if (!p1 || !p2) return null;
-
-            const isP1 = p1.id === currentUserId;
-            const profile = isP1 ? p2 : p1;
-            const { whatsapp_number, linkedin_url } =
-              resolveProfileContacts(profile);
-
-            const isMyContactShared = isP1
-              ? match.profile1_contact_shared
-              : match.profile2_contact_shared;
-            const isTheirContactShared = isP1
-              ? match.profile2_contact_shared
-              : match.profile1_contact_shared;
-            const contactVisible = isMyContactShared && isTheirContactShared;
-
-            return (
-              <div
-                key={match.id}
-                className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col"
-              >
-                {/* Header: Avatar & Name */}
-                <div className="p-3 pb-0 flex flex-col items-center text-center space-y-2">
-                  {profile.avatar_url ? (
-                    <img
-                      src={profile.avatar_url}
-                      alt={profile.full_name}
-                      className="w-14 h-14 rounded-full object-cover ring-2 ring-gray-50"
-                    />
-                  ) : (
-                    <div
-                      className={cn(
-                        "w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-base ring-2 ring-gray-50",
-                        getAvatarBg(profile.full_name),
-                      )}
-                    >
-                      {getInitials(profile.full_name)}
-                    </div>
-                  )}
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-sm line-clamp-1">
-                      {profile.full_name}
-                    </h3>
-                    <p className="text-[10px] text-gray-400 mt-0.5">
-                      Matched {timeAgo(match.matched_at)}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Track Badge */}
-                <div className="px-3 pt-2 flex justify-center">
-                  <Badge color={getTrackBadge(profile.track).color}>
-                    {getTrackBadge(profile.track).label}
-                  </Badge>
-                </div>
-
-                {/* Skills */}
-                <div className="px-3 py-2 flex-1 flex flex-col justify-center min-h-[50px]">
-                  <div className="flex flex-wrap gap-1 justify-center">
-                    {profile.skills?.slice(0, 3).map((skill: string) => (
-                      <SkillBadge key={skill} skill={skill} />
-                    ))}
-                    {profile.skills?.length > 3 && (
-                      <span className="text-[10px] text-gray-400 self-center">
-                        +{profile.skills.length - 3}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Team Details & Teammates */}
-                {match.teamName && (
-                  <div className="px-3 py-2.5 border-t border-gray-100 bg-orange-50/20 text-left flex items-center justify-between gap-2">
-                    <div>
-                      <p className="text-[10px] font-black text-[#ef4d23] uppercase tracking-wider line-clamp-1">
-                        👥 Team: {match.teamName}
-                      </p>
-                      {match.teammates && match.teammates.length > 0 ? (
-                        <div className="mt-1 flex items-center gap-1.5">
-                          <span className="text-[9px] text-gray-400 font-semibold shrink-0">
-                            Classmates:
-                          </span>
-                          <div className="flex -space-x-1.5 overflow-hidden">
-                            {match.teammates.map((t: any) =>
-                              t.avatar_url ? (
-                                <img
-                                  key={t.id}
-                                  src={t.avatar_url}
-                                  alt={t.full_name}
-                                  title={t.full_name}
-                                  className="inline-block h-5 w-5 rounded-full ring-2 ring-white object-cover"
-                                />
-                              ) : (
-                                <div
-                                  key={t.id}
-                                  title={t.full_name}
-                                  className={cn(
-                                    "inline-block h-5 w-5 rounded-full ring-2 ring-white flex items-center justify-center text-[8px] font-black text-white",
-                                    getAvatarBg(t.full_name),
-                                  )}
-                                >
-                                  {getInitials(t.full_name)}
-                                </div>
-                              ),
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <p className="text-[9px] text-gray-400 italic mt-0.5">
-                          No teammates joined yet
-                        </p>
-                      )}
-                    </div>
-                    {match.teamId && (
-                      <Link
-                        href={`/teams/${match.teamId}`}
-                        className="p-1.5 rounded-lg bg-orange-100 hover:bg-orange-200 text-[#ef4d23] transition-colors shrink-0 flex items-center justify-center"
-                        title="View Team Details"
-                      >
-                        <svg
-                          className="w-3.5 h-3.5 stroke-current fill-none"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M5 12h14" />
-                          <path d="m12 5 7 7-7 7" />
-                        </svg>
-                      </Link>
-                    )}
-                  </div>
-                )}
-
-                {/* Gated Contact Info Switch & Status Badge */}
-                <div className="px-3 pb-3 pt-2 border-t border-gray-100 flex flex-col space-y-2 bg-gray-50/50">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
-                      Share My Contact
-                    </span>
-                    <button
-                      onClick={() =>
-                        handleToggleSharing(match.id, isP1, isMyContactShared)
-                      }
-                      disabled={togglingMap[match.id]}
-                      className={cn(
-                        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2",
-                        isMyContactShared ? "bg-[var(--brand)]" : "bg-gray-200",
-                        togglingMap[match.id] &&
-                          "opacity-50 cursor-not-allowed",
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out",
-                          isMyContactShared ? "translate-x-4" : "translate-x-0",
-                        )}
-                      />
-                    </button>
-                  </div>
-                  <div className="text-[10px] flex items-center font-semibold">
-                    {contactVisible ? (
-                      <span className="text-emerald-600 flex items-center gap-1">
-                        <Unlock className="w-3 h-3" /> Connection unlocked!
-                      </span>
-                    ) : isMyContactShared ? (
-                      <span className="text-amber-600 flex items-center gap-1 animate-pulse">
-                        <Lock className="w-3 h-3" /> Waiting for response...
-                      </span>
-                    ) : (
-                      <span className="text-gray-400 flex items-center gap-1">
-                        <Lock className="w-3 h-3" /> Locked
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="p-2 bg-gray-50 border-t border-gray-100 flex gap-2 min-h-[46px] items-center justify-center">
-                  {contactVisible ? (
-                    <>
-                      {whatsapp_number && (
-                        <button
-                          onClick={() =>
-                            window.open(
-                              `https://wa.me/${whatsapp_number.replace(/\D/g, "")}`,
-                            )
-                          }
-                          className="flex-1 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl flex items-center justify-center transition-colors shadow-sm"
-                          title="WhatsApp"
-                        >
-                          <MessageCircle className="w-4 h-4 mr-1" />
-                          <span className="text-[11px] font-bold">
-                            WhatsApp
-                          </span>
-                        </button>
-                      )}
-                      {linkedin_url && (
-                        <button
-                          onClick={() => window.open(linkedin_url)}
-                          className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center transition-colors shadow-sm"
-                          title="LinkedIn"
-                        >
-                          <Briefcase className="w-4 h-4 mr-1" />
-                          <span className="text-[11px] font-bold">
-                            LinkedIn
-                          </span>
-                        </button>
-                      )}
-                      {!whatsapp_number && !linkedin_url && (
-                        <div className="flex-1 py-2 text-[10px] text-center text-gray-400 font-medium italic">
-                          No links provided
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="flex-1 flex items-center justify-center py-2 bg-gray-100 text-gray-400 rounded-xl gap-1 cursor-not-allowed">
-                      <Lock className="w-3.5 h-3.5" />
-                      <span className="text-[10px] font-extrabold tracking-wider uppercase">
-                        Contact Gated
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-10">
+          {activeList.map(item => renderProfileCard(item, activeTab))}
         </div>
       )}
     </div>

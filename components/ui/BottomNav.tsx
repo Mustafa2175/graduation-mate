@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { Compass, Heart, User, Users } from "lucide-react";
+import { Compass, Handshake, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function BottomNav() {
@@ -43,13 +43,13 @@ export default function BottomNav() {
 
   const navItems = [
     { href: "/discover", icon: Compass, label: "Discover" },
-    { href: "/matches", icon: Heart, label: "Matches" },
+    { href: "/matches", icon: Handshake, label: "Connections" },
     { href: "/my-team", icon: Users, label: "My Team" },
     { href: "/profile/edit", icon: User, label: "Profile" },
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-t border-gray-100 pb-safe">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/60 backdrop-blur-2xl border-t border-white/50 pb-safe shadow-[0_-4px_24px_rgba(0,0,0,0.02)]">
       <div className="w-full max-w-5xl mx-auto flex justify-around items-center px-6 py-3">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
@@ -69,7 +69,7 @@ export default function BottomNav() {
               <Icon className={cn("w-6 h-6", isActive && "fill-gray-900")} />
               <span
                 className={cn(
-                  "text-[10px] font-semibold tracking-wide",
+                  "text-[11px] font-semibold tracking-wide",
                   isActive && "text-gray-900",
                 )}
               >

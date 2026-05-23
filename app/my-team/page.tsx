@@ -203,7 +203,7 @@ export default function MyTeamPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 h-[calc(100vh-80px)] overflow-y-auto space-y-6 animate-pulse">
+      <div className="p-6 h-[calc(100vh-80px)] overflow-y-auto space-y-6 ">
         <div className="space-y-2">
           <div className="w-48 h-8 bg-gray-200 rounded-lg" />
           <div className="w-64 h-4 bg-gray-200 rounded" />
@@ -221,14 +221,14 @@ export default function MyTeamPage() {
   if (!team) {
     return (
       <div className="p-6 h-[calc(100vh-80px)] overflow-y-auto flex flex-col justify-center items-center">
-        <div className="w-full max-w-lg bg-white rounded-3xl border border-gray-100 p-8 text-center shadow-xl shadow-gray-50 flex flex-col items-center space-y-6 relative overflow-hidden">
+        <div className="w-full max-w-lg bg-white/80 backdrop-blur-2xl rounded-3xl border border-white/60 p-8 text-center shadow-sm flex flex-col items-center space-y-6 relative overflow-hidden">
           {/* Decorative subtle ambient gradient glows */}
-          <div className="absolute top-0 right-0 w-28 h-28 bg-[#ef4d23]/5 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-36 h-36 bg-[#ef4d23]/5 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute top-0 right-0 w-28 h-28 bg-[var(--color-brand)]/5 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-36 h-36 bg-[var(--color-brand)]/5 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="w-24 h-24 rounded-full bg-orange-50 flex items-center justify-center text-5xl relative animate-bounce">
+          <div className="w-24 h-24 rounded-full bg-orange-50 flex items-center justify-center text-5xl relative ">
             👥
-            <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#ef4d23] text-white text-[10px] font-black flex items-center justify-center animate-ping">
+            <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[var(--color-brand)] text-white text-[10px] font-black flex items-center justify-center ">
               ✨
             </div>
           </div>
@@ -246,7 +246,7 @@ export default function MyTeamPage() {
 
           <div className="w-full pt-4 flex flex-col space-y-3">
             <Link href="/discover" className="block w-full">
-              <Button className="w-full flex items-center justify-center gap-2 font-bold shadow-md shadow-[#ef4d23]/10">
+              <Button className="w-full flex items-center justify-center gap-2 font-bold shadow-md shadow-[var(--color-brand)]/10">
                 <Compass className="w-4 h-4" /> Find Classmates (Discover)
               </Button>
             </Link>
@@ -344,7 +344,7 @@ export default function MyTeamPage() {
                 <div
                   key={member.id}
                   className={cn(
-                    "bg-white rounded-2xl border p-4 shadow-sm relative overflow-hidden flex flex-col justify-between transition-all duration-200 hover:shadow-md",
+                    "bg-white/60 backdrop-blur-xl rounded-2xl border p-4 shadow-sm relative overflow-hidden flex flex-col justify-between transition-all duration-200 hover:shadow-md",
                     isCurrentUser
                       ? "border-orange-200 bg-orange-50/5"
                       : "border-gray-100",
@@ -458,7 +458,7 @@ export default function MyTeamPage() {
 
         {/* Right Column (1/3): Form & Optional Details */}
         <div className="space-y-6">
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm text-left">
+          <div className="bg-white/70 backdrop-blur-2xl border border-white/60 rounded-3xl p-6 shadow-sm text-left">
             <h2 className="text-lg font-black text-gray-900 flex items-center gap-2 mb-4">
               {/* Custom Settings Gear SVG Icon */}
               <svg

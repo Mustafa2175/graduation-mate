@@ -78,7 +78,7 @@ export default function ProfileCard({
   return (
     <div
       className={cn(
-        'relative bg-white rounded-3xl border border-neutral-200/80 shadow-[0_8px_30px_rgb(0,0,0,0.03)] p-5 space-y-4 overflow-hidden transition-all h-full flex flex-col justify-between',
+        'relative bg-white/90 backdrop-blur-2xl rounded-3xl border border-white/60 shadow-sm p-6 space-y-4 overflow-hidden transition-all h-full flex flex-col justify-between',
         !profile.is_available && 'opacity-60'
       )}
     >

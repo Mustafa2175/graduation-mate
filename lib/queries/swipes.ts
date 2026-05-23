@@ -33,7 +33,8 @@ export async function checkMutualMatch(
     .eq("from_profile_id", profileB)
     .eq("to_profile_id", profileA)
     .eq("direction", "RIGHT")
-    .single();
+    .limit(1)
+    .maybeSingle();
   return !!data;
 }
 

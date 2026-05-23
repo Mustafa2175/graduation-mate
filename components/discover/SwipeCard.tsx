@@ -38,13 +38,13 @@ const SwipeCard = forwardRef<any, SwipeCardProps>(
       <div className="relative select-none cursor-grab active:cursor-grabbing">
         {/* YES / SKIP labels */}
         {isTop && dragDir === 'RIGHT' && (
-          <div className="absolute top-4 left-4 z-20 rotate-[-15deg] border-4 border-green-500 rounded-lg px-3 py-1 pointer-events-none">
-            <span className="text-green-500 font-extrabold text-xl tracking-wider">YES!</span>
+          <div className="absolute top-4 left-4 z-20 bg-[var(--color-brand)] text-white shadow-lg rounded-full px-4 py-1.5 pointer-events-none animate-in zoom-in duration-200">
+            <span className="font-bold text-xs tracking-widest uppercase">Team Fit</span>
           </div>
         )}
         {isTop && dragDir === 'LEFT' && (
-          <div className="absolute top-4 right-4 z-20 rotate-[15deg] border-4 border-red-500 rounded-lg px-3 py-1 pointer-events-none">
-            <span className="text-red-500 font-extrabold text-xl tracking-wider">SKIP</span>
+          <div className="absolute top-4 right-4 z-20 bg-neutral-800 text-white shadow-lg rounded-full px-4 py-1.5 pointer-events-none animate-in zoom-in duration-200">
+            <span className="font-bold text-xs tracking-widest uppercase">Pass</span>
           </div>
         )}
 

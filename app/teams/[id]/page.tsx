@@ -84,7 +84,7 @@ export default function TeamDetailsPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 h-[calc(100vh-80px)] overflow-y-auto space-y-6 animate-pulse">
+      <div className="p-6 h-[calc(100vh-80px)] overflow-y-auto space-y-6 ">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gray-200 rounded-xl" />
           <div className="space-y-2">

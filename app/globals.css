@@ -5,11 +5,17 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --color-brand: #0871E7;
+  --radius-card: 16px;
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
 @theme inline {
     --color-background: var(--background);
     --color-foreground: var(--foreground);
+    --color-brand: var(--color-brand);
+    --radius-card: var(--radius-card);
+    --shadow-card: var(--shadow-card);
     --font-instrument: "Instrument Serif", serif;
     --font-serif: "Instrument Serif", serif;
     --font-sans: "Inter", sans-serif;
@@ -28,12 +34,28 @@
     font-family: var(--font-nokia);
 }
 
+@utility pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 16px);
+}
+
 body {
     background: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    video {
+        display: none !important;
+    }
 }
 
 /* Velorah Liquid Glass Utility */
@@ -102,4 +124,22 @@ body {
     box-shadow:
         0 10px 40px -10px rgba(0, 0, 0, 0.04),
         inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* Atmospheric Background Gradient */
+@keyframes atmospheric-pan {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.bg-atmospheric {
+  background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 25%, #ffffff 50%, #f0fdfa 75%, #f8fafc 100%);
+  background-size: 200% 200%;
+  animation: atmospheric-pan 25s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bg-atmospheric {
+    animation: none;
+    background-position: center;
+  }
 }

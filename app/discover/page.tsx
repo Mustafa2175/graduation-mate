@@ -68,7 +68,7 @@ export default function DiscoverPage() {
 
   if (!authChecked || isRedirecting || isLoading) {
     return (
-      <div className="flex flex-col h-[calc(100vh-80px)] p-6 animate-pulse">
+      <div className="flex flex-col h-[calc(100vh-80px)] p-6 ">
         <div className="h-10 bg-gray-200 rounded-xl mb-6 w-full" />
         <div className="flex-1 bg-gray-200 rounded-2xl mb-8" />
         <div className="flex justify-center gap-8 mb-4">
@@ -92,7 +92,7 @@ export default function DiscoverPage() {
           </p>
           <button
             onClick={() => window.location.reload()}
-            className="inline-flex items-center justify-center rounded-full bg-[#ef4d23] px-6 py-3 text-xs font-bold text-white uppercase tracking-wider hover:bg-[#ef4d23]/95 transition-all"
+            className="inline-flex items-center justify-center rounded-full bg-[var(--color-brand)] px-6 py-3 text-xs font-bold text-white uppercase tracking-wider hover:bg-[var(--color-brand)]/95 transition-all"
           >
             Try Again
           </button>
@@ -102,21 +102,20 @@ export default function DiscoverPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-100px)] w-full bg-[#ededed] p-3 sm:p-5 rounded-3xl border border-neutral-200/50 flex flex-col justify-start relative overflow-hidden font-sans">
-      {/* Top Header & Badge (Convix Style) */}
-      <div className="text-center mb-5 pt-2 shrink-0 flex flex-col items-center select-none">
+    <div className="min-h-[calc(100vh-100px)] w-full bg-[#ededed] p-4 sm:p-6 rounded-3xl border border-neutral-200/50 flex flex-col justify-start relative overflow-hidden font-sans">
+      {/* Top Header & Badge */}
+      <div className="text-center mb-3 pt-1 shrink-0 flex flex-col items-center select-none">
         <div className="inline-flex items-center gap-2 bg-white rounded-full px-4 py-1.5 shadow-sm text-[13px] border border-neutral-100">
-          <span className="w-2 h-2 rounded-full bg-[#ef4d23]" />
+          <span className="w-2 h-2 rounded-full bg-[var(--color-brand)]" />
           <span className="font-semibold text-neutral-800 tracking-wide text-[10px] uppercase font-sans">
-            Convix Matchmaking
+            TeamUp Network
           </span>
         </div>
-        <h1 className="font-sans font-semibold text-3xl sm:text-4xl text-[#0b0f1a] tracking-tight mt-3">
-          Shaping{" "}
-          <span className="font-instrument italic text-[1.15em] font-normal leading-none text-[#ef4d23]">
-            Teams
-          </span>{" "}
-          of tomorrow
+        <h1 className="font-sans font-semibold text-2xl sm:text-3xl text-[#0b0f1a] tracking-tight mt-2">
+          Find your ideal{" "}
+          <span className="font-instrument italic text-[1.15em] font-normal leading-none text-[var(--color-brand)]">
+            Teammates
+          </span>
         </h1>
       </div>
 
@@ -124,8 +123,8 @@ export default function DiscoverPage() {
       <div className="relative flex-1 w-full max-w-sm mx-auto min-h-[360px]">
         {remainingFiltered.length === 0 ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center space-y-6 bg-white/85 backdrop-blur-md rounded-3xl border border-neutral-200/50 p-8 shadow-sm animate-in fade-in duration-300">
-            <div className="w-20 h-20 bg-[#f5f2ee] rounded-full flex items-center justify-center border border-neutral-100 shadow-inner">
-              <span className="text-3xl text-[#ef4d23]">✨</span>
+            <div className="w-20 h-20 bg-neutral-50 rounded-full flex items-center justify-center border border-neutral-100 ">
+              <span className="text-3xl text-[var(--color-brand)]">✨</span>
             </div>
             <div className="space-y-2">
               <h3 className="font-semibold text-xl text-[#0b0f1a] tracking-tight">
@@ -139,7 +138,7 @@ export default function DiscoverPage() {
             </div>
             <button
               onClick={resetSwipeQueue}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#ef4d23] px-8 py-3 text-xs font-bold text-white uppercase tracking-wider hover:bg-[#ef4d23]/95 transition-all shadow-[0_4px_16px_rgba(239,77,35,0.2)] cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-brand)] px-8 py-3 text-xs font-bold text-white uppercase tracking-wider hover:bg-[var(--color-brand)]/95 transition-all shadow-[0_4px_16px_rgba(8,113,231,0.2)] cursor-pointer"
             >
               🔄 Reset Queue & Swipe Again
             </button>
