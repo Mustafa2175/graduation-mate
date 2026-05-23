@@ -10,6 +10,17 @@
 
 ---
 
+## Clarifications
+
+### Session 2026-05-23
+- Q: University Email Domain (.edu) Enforcement Scope → A: Configurable: allow all domains (like Gmail) for local development/testing, but enforce `.edu` in production.
+- Q: Discover Pagination UX Pattern → A: Infinite Scroll: Pre-fetch next 20 profiles in background when user has 5 cards left in queue.
+- Q: Team Membership Cardinality & Discovery Constraints → A: Strict Single Team (max 1 team membership enforced via UNIQUE(profile_id) on team_members; remove profiles.team_id). Being in a team does NOT block discovery, browsing, or sending/receiving collaboration requests, but does block creating or joining another team without leaving the current one first.
+- Q: Discover Filters Query Execution → A: Server-side Querying (pass filters directly to Supabase queries; handles paging properly and fetches from the entire database rather than client-side memory; handles loading skeleton when filters are changed).
+- Q: Testing Scope & Frameworks → A: Unit & Integration Only (configure Vitest and React Testing Library to write tests for custom hooks like useSwipe, useCurrentUser, and query helpers; defer E2E testing).
+
+---
+
 # Part 1: System Health Report
 
 ## 1. Authentication Architecture Audit
@@ -49,7 +60,7 @@
 | DB-02 | **HIGH** | `matches` INSERT policy is `WITH CHECK (auth.uid() IS NOT NULL)` — any authenticated user can create a match between ANY two profiles, not just involving themselves. A malicious user could forge matches. | [015_rls_perf_optimization.sql](file:///d:/Course/Projects/graduation-mate/supabase/migrations/015_rls_perf_optimization.sql#L88-L90) |
 | DB-03 | **HIGH** | `resetSwipes` deletes ALL matches for a user (both as profile1 and profile2), plus all their swipes. This is a **destructive demo feature** left in production — a user could destroy their mutual connections. | [swipes.ts](file:///d:/Course/Projects/graduation-mate/lib/queries/swipes.ts#L41-L48) |
 | DB-04 | **MEDIUM** | No swipe rate limiting — a script could mass-swipe-right on every profile via the Supabase client. The unique constraint on swipes prevents duplicates but doesn't prevent 10,000 right-swipes in 1 second. | — |
-| DB-05 | **MEDIUM** | `profiles.team_id` and `team_members` table create dual source of truth. `createTeam` and `joinTeam` update both, but if either write fails, they go out of sync. No transaction wrapping. | [teams.ts](file:///d:/Course/Projects/graduation-mate/lib/queries/teams.ts#L3-L47) |
+| DB-05 | **MEDIUM** | `profiles.team_id` and `team_members` table create dual source of truth. Target design: Keep `team_members` as sole source of truth with `UNIQUE(profile_id)` to enforce single membership without blocking discovery. Remove `profiles.team_id` column. | [teams.ts](file:///d:/Course/Projects/graduation-mate/lib/queries/teams.ts#L3-L47) |
 | DB-06 | **MEDIUM** | `createMatch` performs 2 SELECT queries to check for existing matches, then an INSERT, then potentially 2 more SELECTs on `23505` conflict — up to **5 DB roundtrips** for a single match creation. | [matches.ts](file:///d:/Course/Projects/graduation-mate/lib/queries/matches.ts#L38-L81) |
 | DB-07 | **LOW** | Migration 002 (`disable_rls.sql`) was immediately superseded by 006 re-enabling RLS. Dead migration in history. | 002_disable_rls.sql |
 | DB-08 | **LOW** | No email domain validation (`.edu` not enforced at DB or auth level). | — |
@@ -223,8 +234,8 @@
 
 ### R6. Add Discover Pagination *(Pre-Beta — Medium effort)*
 **Why**: Loading all profiles at once breaks at 500+ users.
-**Fix**: Implement cursor-based pagination (load 20 profiles at a time, fetch next batch when queue runs low).
-**Risk**: Low-Medium — requires UX consideration for "end of batch" vs "end of all profiles".
+**Fix**: Implement cursor-based pagination with Infinite Scroll (load 20 profiles at a time, pre-fetch next batch in background when user has 5 cards left).
+**Risk**: Low-Medium — needs careful coordination with react-tinder-card state to prevent flashes/flickering.
 
 ### R7. Consolidate getAvatarBg *(Pre-Beta — Low effort)*
 **Why**: Same person shows different avatar colors on different pages.
@@ -315,8 +326,8 @@ TeamUp genuinely feels like a unified consumer product. The visual language (gla
 - [ ] **Decompose matches/page** — extract team-enrichment logic to query layer
 - [ ] **Add accessibility** — ARIA labels, keyboard navigation, screen reader testing
 - [ ] **Implement dark mode** — extend CSS variables with `prefers-color-scheme`
-- [ ] **Add discover filters** — filter by track, skills, GPA range
-- [ ] **Resolve dual team_id source of truth** — use only `team_members` junction table
+- [ ] **Add discover filters** — filter by track, skills, GPA range (server-side database querying integrated with infinite scroll pagination)
+- [ ] **Resolve dual team_id source of truth** — remove `profiles.team_id`, use `team_members` with `UNIQUE(profile_id)` to enforce strict single membership (does not block discovery/requests, blocks joining/creating new team)
 
 > Estimated effort: 2-3 weeks spread across post-beta iterations.
 
@@ -324,7 +335,7 @@ TeamUp genuinely feels like a unified consumer product. The visual language (gla
 
 - [ ] **Server Components** — migrate read-heavy pages to SSR for faster initial paint
 - [ ] **Swipe rate limiting** — Postgres function or Edge Function throttle
-- [ ] **Email domain enforcement** — `.edu` validation on signup
+- [ ] **Email domain enforcement** — Configurable `.edu` validation on signup (disabled in dev, enforced in production)
 - [ ] **Match notification system** — real-time via Supabase Realtime or email
 - [ ] **Account deletion flow** — GDPR-compliant cascade delete
 - [ ] **PWA support** — service worker for offline capability

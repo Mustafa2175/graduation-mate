@@ -44,7 +44,7 @@ To prevent Git merge conflicts while editing in parallel:
   * *Description*: Implement cursor-based or limit/offset pagination in query responses for student profiles.
   * *Target Files*: [profiles.ts](file:///d:/Course/Projects/graduation-mate/lib/queries/profiles.ts)
 - [ ] **Add Email Domain Enforcer (.edu)**
-  * *Description*: Add checks restricting sign-up/onboarding strictly to verified university email domains.
+  * *Description*: Add checks restricting sign-up/onboarding strictly to verified university email domains. Configurable to allow Gmail for local development but enforce in production.
   * *Target Files*: Auth routes & Supabase validation.
 - [ ] **Implement Swipe Rate Limiting**
   * *Description*: Implement a rate-limiting check (e.g., via a postgres function/trigger) on the swipes table to deter bots.
@@ -76,7 +76,7 @@ To prevent Git merge conflicts while editing in parallel:
 
 ### Phase 2: Testing Framework Setup (Medium Priority)
 - [ ] **Set Up Testing Environment (Vitest + RTL)**
-  * *Description*: Set up the test suite configuration, add helper testing commands to `package.json`, and write unit tests for critical custom hooks (`useSwipe`, `useCurrentUser`).
+  * *Description*: Set up the test suite configuration, add helper testing commands to `package.json`, and write unit and integration tests (deferring E2E browser tests) for critical custom hooks (`useSwipe`, `useCurrentUser`).
   * *Target Files*: `package.json`, new test specs
 
 ---
