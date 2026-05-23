@@ -3,26 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { getTeamById, getTeamMembers } from "@/lib/queries/teams";
-import { getInitials, getTrackBadge, cn } from "@/lib/utils";
+import { getInitials, getTrackBadge, getAvatarBg, cn } from "@/lib/utils";
 import Badge from "@/components/ui/Badge";
 import SkillBadge from "@/components/profile/SkillBadge";
 
-function getAvatarBg(name: string) {
-  const colors = [
-    "bg-gradient-to-tr from-pink-500 to-rose-500",
-    "bg-gradient-to-tr from-purple-500 to-indigo-500",
-    "bg-gradient-to-tr from-blue-500 to-cyan-500",
-    "bg-gradient-to-tr from-emerald-500 to-teal-500",
-    "bg-gradient-to-tr from-amber-500 to-orange-500",
-    "bg-gradient-to-tr from-red-500 to-pink-500",
-  ];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const index = Math.abs(hash) % colors.length;
-  return colors[index];
-}
 
 export default function TeamDetailsPage() {
   const params = useParams();
@@ -112,7 +96,7 @@ export default function TeamDetailsPage() {
           </p>
           <button
             onClick={() => router.back()}
-            className="px-6 py-2.5 bg-[var(--brand)] text-white font-bold rounded-xl shadow-md hover:bg-[var(--brand-hover)] transition-colors"
+            className="px-6 py-2.5 bg-dark-carbon text-absolute-zero font-bold rounded-xl shadow-md hover:bg-midnight-void transition-colors"
           >
             Go Back
           </button>
@@ -175,7 +159,7 @@ export default function TeamDetailsPage() {
     (teammates.length / teamSizeNeeded) * 100,
   );
   const isFull = teammates.length >= teamSizeNeeded;
-  const progressColor = isFull ? "bg-green-500" : "bg-[var(--brand)]";
+  const progressColor = isFull ? "bg-neon-green" : "bg-dark-carbon";
 
   // What they're building specs
   const hasTechnologies =
@@ -214,7 +198,7 @@ export default function TeamDetailsPage() {
 
           {/* Spots Open Badge */}
           {spotsOpen > 0 ? (
-            <Badge color="bg-[var(--brand-light)] text-[var(--brand)]">
+            <Badge color="bg-slate text-midnight-void border border-dark-carbon/10">
               {spotsOpen} {spotsOpen === 1 ? "spot" : "spots"} open
             </Badge>
           ) : (

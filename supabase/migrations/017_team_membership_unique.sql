@@ -15,9 +15,7 @@ WHERE id NOT IN (
 ALTER TABLE public.team_members
   ADD CONSTRAINT team_members_profile_id_unique UNIQUE (profile_id);
 
--- Step 3: Drop the index on profiles.team_id (created in migration 014)
-DROP INDEX IF EXISTS idx_profiles_team_id;
-
--- Step 4: Drop the redundant team_id column from profiles
-ALTER TABLE public.profiles
-  DROP COLUMN IF EXISTS team_id;
+-- NOTE: profiles.team_id is intentionally KEPT as a denormalized
+-- convenience column. It is maintained in sync by teams.ts mutations
+-- (createTeam, joinTeam, leaveTeam) and is read by profiles.ts,
+-- my-team/page.tsx, profile/edit/page.tsx, and discover filtering.

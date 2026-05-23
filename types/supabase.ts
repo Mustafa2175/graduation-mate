@@ -98,6 +98,7 @@ export type Database = {
           is_available: boolean | null
           looking_for_role: string | null
           skills: string[] | null
+          team_id: string | null
           team_status: string | null
           track: string
         }
@@ -113,6 +114,7 @@ export type Database = {
           is_available?: boolean | null
           looking_for_role?: string | null
           skills?: string[] | null
+          team_id?: string | null
           team_status?: string | null
           track?: string
         }
@@ -128,10 +130,19 @@ export type Database = {
           is_available?: boolean | null
           looking_for_role?: string | null
           skills?: string[] | null
+          team_id?: string | null
           team_status?: string | null
           track?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       swipes: {
         Row: {

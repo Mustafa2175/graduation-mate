@@ -4,29 +4,15 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
-import { getConnections, resolveProfileContacts } from "@/lib/queries/matches";
+import { getConnections, resolveProfileContacts, ConnectionItem } from "@/lib/queries/matches";
 import { insertSwipe, checkMutualMatch } from "@/lib/queries/swipes";
 import { createMatch } from "@/lib/queries/matches";
-import { getInitials, getTrackBadge, cn } from "@/lib/utils";
-import { MessageCircle, Briefcase, Lock, Unlock, Check, X } from "lucide-react";
+import { getInitials, getTrackBadge, getAvatarBg, cn } from "@/lib/utils";
+import { MessageCircle, Briefcase, Lock, Check, X } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import SkillBadge from "@/components/profile/SkillBadge";
 import Button from "@/components/ui/Button";
 import { toast } from "react-hot-toast";
-
-// Deterministic background color from name
-const AVATAR_BG = [
-  "bg-violet-500",
-  "bg-blue-500",
-  "bg-emerald-500",
-  "bg-orange-500",
-  "bg-pink-500",
-  "bg-teal-500",
-];
-function getAvatarBg(name: string) {
-  const code = name.charCodeAt(0) + (name.charCodeAt(1) || 0);
-  return AVATAR_BG[code % AVATAR_BG.length];
-}
 
 function timeAgo(dateString: string) {
   if (!dateString) return "Just now";
@@ -48,9 +34,9 @@ export default function MatchesPage() {
   const router = useRouter();
   const { getFreshUser } = useAuth();
   
-  const [mutual, setMutual] = useState<any[]>([]);
-  const [incoming, setIncoming] = useState<any[]>([]);
-  const [outgoing, setOutgoing] = useState<any[]>([]);
+  const [mutual, setMutual] = useState<ConnectionItem[]>([]);
+  const [incoming, setIncoming] = useState<ConnectionItem[]>([]);
+  const [outgoing, setOutgoing] = useState<ConnectionItem[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string>("");
@@ -183,7 +169,7 @@ export default function MatchesPage() {
     );
   }
 
-  const renderProfileCard = (item: any, type: "invites" | "matches" | "sent") => {
+  const renderProfileCard = (item: ConnectionItem, type: "invites" | "matches" | "sent") => {
     const profile = item.profile;
     const { whatsapp_number, linkedin_url } = resolveProfileContacts(profile);
     const isActionLoading = actionLoading[profile.id];
@@ -218,8 +204,8 @@ export default function MatchesPage() {
             {profile.skills?.slice(0, 3).map((skill: string) => (
               <SkillBadge key={skill} skill={skill} />
             ))}
-            {profile.skills?.length > 3 && (
-              <span className="text-xs text-gray-400 self-center">+{profile.skills.length - 3}</span>
+            {(profile.skills?.length ?? 0) > 3 && (
+              <span className="text-xs text-gray-400 self-center">+{profile.skills!.length - 3}</span>
             )}
           </div>
         </div>
@@ -235,7 +221,7 @@ export default function MatchesPage() {
         {item.teamName && (
           <div className="px-3 py-2.5 border-t border-gray-100 bg-neutral-50 text-left flex items-center justify-between gap-2">
             <div>
-              <p className="text-xs font-black text-[var(--color-brand)] uppercase tracking-wider line-clamp-1">
+              <p className="text-xs font-black text-dark-carbon uppercase tracking-wider line-clamp-1">
                 👥 Team: {item.teamName}
               </p>
               {item.teammates && item.teammates.length > 0 ? (
@@ -258,7 +244,7 @@ export default function MatchesPage() {
               )}
             </div>
             {item.teamId && (
-              <Link href={`/teams/${item.teamId}`} className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-[var(--color-brand)] transition-colors shrink-0 flex items-center justify-center" title="View Team Details">
+              <Link href={`/teams/${item.teamId}`} className="p-1.5 rounded-lg bg-dark-carbon hover:bg-midnight-void text-absolute-zero transition-colors shrink-0 flex items-center justify-center" title="View Team Details">
                 <svg className="w-3.5 h-3.5 stroke-current fill-none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                   <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
                 </svg>
@@ -272,13 +258,13 @@ export default function MatchesPage() {
           {type === "matches" && (
             <>
               {whatsapp_number && (
-                <button onClick={() => window.open(`https://wa.me/${whatsapp_number.replace(/\D/g, "")}`)} className="flex-1 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl flex items-center justify-center transition-colors shadow-sm" title="WhatsApp">
+                <button onClick={() => window.open(`https://wa.me/${whatsapp_number.replace(/\D/g, "")}`)} className="flex-1 py-2 bg-neon-green hover:bg-neon-green/90 text-polar-white rounded-xl flex items-center justify-center transition-colors shadow-sm" title="WhatsApp">
                   <MessageCircle className="w-4 h-4 mr-1" />
                   <span className="text-[11px] font-bold">WhatsApp</span>
                 </button>
               )}
               {linkedin_url && (
-                <button onClick={() => window.open(linkedin_url)} className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center transition-colors shadow-sm" title="LinkedIn">
+                <button onClick={() => window.open(linkedin_url)} className="flex-1 py-2 bg-dark-carbon hover:bg-midnight-void text-absolute-zero rounded-xl flex items-center justify-center transition-colors shadow-sm" title="LinkedIn">
                   <Briefcase className="w-4 h-4 mr-1" />
                   <span className="text-[11px] font-bold">LinkedIn</span>
                 </button>
@@ -291,11 +277,11 @@ export default function MatchesPage() {
 
           {type === "invites" && (
             <>
-              <button disabled={isActionLoading} onClick={() => handleDecline(profile.id)} className="flex-1 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl flex items-center justify-center transition-colors shadow-sm disabled:opacity-50" title="Skip">
+              <button disabled={isActionLoading} onClick={() => handleDecline(profile.id)} className="flex-1 py-2 bg-deep-space hover:bg-midnight-void text-ash-gray rounded-xl flex items-center justify-center transition-colors shadow-sm disabled:opacity-50" title="Skip">
                 <X className="w-4 h-4 mr-1" />
                 <span className="text-[11px] font-bold">Skip</span>
               </button>
-              <button disabled={isActionLoading} onClick={() => handleAccept(profile.id)} className="flex-1 py-2 bg-[var(--color-brand)] hover:opacity-90 text-white rounded-xl flex items-center justify-center transition-colors shadow-sm disabled:opacity-50" title="Accept & Connect">
+              <button disabled={isActionLoading} onClick={() => handleAccept(profile.id)} className="flex-1 py-2 bg-dark-carbon hover:bg-midnight-void text-absolute-zero rounded-xl flex items-center justify-center transition-colors shadow-sm disabled:opacity-50" title="Accept & Connect">
                 <Check className="w-4 h-4 mr-1" />
                 <span className="text-[11px] font-bold">Accept & Connect</span>
               </button>
@@ -318,7 +304,7 @@ export default function MatchesPage() {
       onClick={() => setActiveTab(id)}
       className={cn(
         "flex-1 pb-3 text-sm font-semibold transition-colors border-b-2 relative",
-        activeTab === id ? "border-[var(--color-brand)] text-[var(--color-brand)]" : "border-transparent text-gray-500 hover:text-gray-700"
+        activeTab === id ? "border-dark-carbon text-dark-carbon" : "border-transparent text-gray-500 hover:text-gray-700"
       )}
     >
       <span className="flex items-center justify-center gap-1.5">
@@ -326,7 +312,7 @@ export default function MatchesPage() {
         {count > 0 && (
           <span className={cn(
             "px-1.5 py-0.5 rounded-full text-[10px] font-bold",
-            activeTab === id ? "bg-[var(--color-brand)] text-white" : "bg-gray-200 text-gray-600"
+            activeTab === id ? "bg-dark-carbon text-absolute-zero" : "bg-gray-200 text-gray-600"
           )}>
             {count}
           </span>

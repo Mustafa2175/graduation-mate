@@ -1,7 +1,7 @@
 // hooks/useSwipe.ts
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "./useAuth";
 import { getDiscoverProfiles } from "@/lib/queries/profiles";
 import {
@@ -19,10 +19,13 @@ export function useSwipe() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const currentProfileId = useRef<string | null>(null);
+  const nextCursor = useRef<string | null>(null);
 
-  const loadProfiles = async () => {
+  const loadProfiles = useCallback(async () => {
     const user = await getFreshUser();
     if (!user) {
       // No localStorage session yet (e.g. just signed up but setCurrentUser
@@ -40,11 +43,18 @@ export function useSwipe() {
       const { data, error } = await getDiscoverProfiles(
         user.profileId,
         swipedIds,
+        20
       );
       if (error) throw error;
-      if (data) {
+      if (data && data.length > 0) {
         setProfiles(data as Profile[]);
         setCurrentIndex(data.length - 1);
+        nextCursor.current = data[data.length - 1].created_at;
+        setHasMore(data.length === 20);
+      } else {
+        setProfiles([]);
+        setCurrentIndex(-1);
+        setHasMore(false);
       }
     } catch (e) {
       console.error("Failed to load profiles", e);
@@ -54,13 +64,13 @@ export function useSwipe() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [getFreshUser]);
 
   useEffect(() => {
     loadProfiles();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleSwipe = async (direction: "RIGHT" | "LEFT", profile: Profile) => {
+  const handleSwipe = useCallback(async (direction: "RIGHT" | "LEFT", profile: Profile) => {
     const pid = currentProfileId.current;
     if (!pid) return;
 
@@ -79,20 +89,64 @@ export function useSwipe() {
     } catch (e) {
       console.error("Swipe error", e);
     }
-  };
+  }, []);
 
-  const resetSwipeQueue = async () => {
+  const fetchMore = useCallback(async () => {
+    if (isFetchingMore || !hasMore || !nextCursor.current || !currentProfileId.current) return;
+    
+    setIsFetchingMore(true);
+    try {
+      const swipedIds = await getSwipedIds(currentProfileId.current);
+      // NOTE: Cursor collision risk. If two profiles share the exact same created_at timestamp,
+      // the .lt() filter in getDiscoverProfiles will skip both. A compound cursor (created_at + id) 
+      // would be safer, but given our current scale, we defer this complexity.
+      const { data, error } = await getDiscoverProfiles(
+        currentProfileId.current,
+        swipedIds,
+        20,
+        nextCursor.current
+      );
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        // Prepend new batch so it appears under the current cards
+        setProfiles(prev => [...(data as Profile[]), ...prev]);
+        setCurrentIndex(prev => prev + data.length);
+        nextCursor.current = data[data.length - 1].created_at ?? null;
+        setHasMore(data.length === 20);
+      } else {
+        setHasMore(false);
+      }
+    } catch (e) {
+      console.error("Failed to fetch more profiles", e);
+      // UX improvement: Re-allow fetch attempts if a transient network error occurred
+      setHasMore(true);
+    } finally {
+      setIsFetchingMore(false);
+    }
+  }, [isFetchingMore, hasMore]);
+
+  const resetSwipeQueue = useCallback(async () => {
     const user = await getFreshUser();
     if (!user) return;
     setLoadError(null);
     setIsLoading(true);
     try {
       await resetSwipes(user.profileId);
-      const { data, error } = await getDiscoverProfiles(user.profileId, []);
+      nextCursor.current = null;
+      setHasMore(true);
+      const { data, error } = await getDiscoverProfiles(user.profileId, [], 20);
       if (error) throw error;
-      if (data) {
+      if (data && data.length > 0) {
         setProfiles(data as Profile[]);
         setCurrentIndex(data.length - 1);
+        nextCursor.current = data[data.length - 1].created_at ?? null;
+        setHasMore(data.length === 20);
+      } else {
+        setProfiles([]);
+        setCurrentIndex(-1);
+        setHasMore(false);
       }
     } catch (e) {
       console.error("Failed to reset swipes", e);
@@ -102,14 +156,17 @@ export function useSwipe() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [getFreshUser]);
 
   return {
     profiles,
     currentIndex,
     isLoading,
+    isFetchingMore,
+    hasMore,
     loadError,
     handleSwipe,
     resetSwipeQueue,
+    fetchMore,
   };
 }

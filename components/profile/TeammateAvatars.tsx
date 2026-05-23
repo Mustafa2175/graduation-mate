@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
-import { getInitials } from '@/lib/utils'
+import { getInitials, getAvatarBg } from '@/lib/utils'
 
 interface Teammate {
   id: string
@@ -11,19 +11,6 @@ interface Teammate {
   avatar_url: string | null
 }
 
-const AVATAR_COLORS = [
-  'bg-violet-400',
-  'bg-blue-400',
-  'bg-emerald-400',
-  'bg-orange-400',
-  'bg-pink-400',
-  'bg-teal-400',
-]
-
-function getAvatarColor(name: string) {
-  const code = name.charCodeAt(0) + (name.charCodeAt(1) || 0)
-  return AVATAR_COLORS[code % AVATAR_COLORS.length]
-}
 
 interface TeammateAvatarsProps {
   teamId: string | null
@@ -66,7 +53,7 @@ export default function TeammateAvatars({ teamId }: TeammateAvatarsProps) {
             {t.avatar_url ? (
               <img src={t.avatar_url} alt={t.full_name} className="w-full h-full object-cover" />
             ) : (
-              <div className={`w-full h-full flex items-center justify-center ${getAvatarColor(t.full_name)}`}>
+              <div className={`w-full h-full flex items-center justify-center ${getAvatarBg(t.full_name)}`}>
                 {getInitials(t.full_name)}
               </div>
             )}

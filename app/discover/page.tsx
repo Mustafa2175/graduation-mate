@@ -14,9 +14,12 @@ export default function DiscoverPage() {
     profiles,
     currentIndex,
     isLoading,
+    isFetchingMore,
+    hasMore,
     loadError,
     handleSwipe,
     resetSwipeQueue,
+    fetchMore,
   } = useSwipe();
   const [authChecked, setAuthChecked] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
@@ -43,6 +46,14 @@ export default function DiscoverPage() {
       isMounted = false;
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Infinite scroll trigger
+  useEffect(() => {
+    // When 5 or fewer cards remain, pre-fetch the next batch
+    if (currentIndex <= 4 && currentIndex >= 0 && hasMore && !isFetchingMore) {
+      fetchMore();
+    }
+  }, [currentIndex, hasMore, isFetchingMore, fetchMore]);
 
   // Filter profiles based on selected filters, and keep only those up to currentIndex
   const remainingFiltered = useMemo(() => {
@@ -144,27 +155,36 @@ export default function DiscoverPage() {
             </button>
           </div>
         ) : (
-          remainingFiltered.map((profile, i) => {
-            const isTop = i === remainingFiltered.length - 1;
-            return (
-              <div
-                key={profile.id}
-                className="absolute inset-0 pointer-events-none"
-                style={{ zIndex: i }}
-              >
-                <div className="pointer-events-auto w-full h-full">
-                  <SwipeCard
-                    ref={(el) => {
-                      childRefs.current[i] = el;
-                    }}
-                    profile={profile}
-                    onSwipe={(dir) => handleSwipe(dir, profile)}
-                    isTop={isTop}
-                  />
-                </div>
+          <>
+            {/* Background skeleton when fetching more */}
+            {isFetchingMore && (
+              <div className="absolute inset-0 z-[-1] p-4 bg-white/40 rounded-3xl animate-pulse shadow-sm border border-neutral-100 flex flex-col">
+                <div className="h-10 bg-neutral-200/50 rounded-xl mb-6 w-full" />
+                <div className="flex-1 bg-neutral-200/50 rounded-2xl mb-8" />
               </div>
-            );
-          })
+            )}
+            {remainingFiltered.map((profile, i) => {
+              const isTop = i === remainingFiltered.length - 1;
+              return (
+                <div
+                  key={profile.id}
+                  className="absolute inset-0 pointer-events-none"
+                  style={{ zIndex: i }}
+                >
+                  <div className="pointer-events-auto w-full h-full">
+                    <SwipeCard
+                      ref={(el) => {
+                        childRefs.current[i] = el;
+                      }}
+                      profile={profile}
+                      onSwipe={(dir) => handleSwipe(dir, profile)}
+                      isTop={isTop}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </>
         )}
       </div>
 

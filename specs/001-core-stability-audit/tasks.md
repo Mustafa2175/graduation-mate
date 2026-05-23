@@ -53,9 +53,9 @@
 **Assignment**: **Developer C**
 **Dependencies**: None. Can run in parallel with US1, US2, and US4.
 
-- [ ] T015 [P] [US3] Update `getDiscoverProfiles` in `lib/queries/profiles.ts` to accept `cursor` and `limit` parameters
-- [ ] T016 [P] [US3] Implement Infinite Scroll logic (pre-fetch next 20 profiles when 5 cards remain) in `app/discover/page.tsx`
-- [ ] T017 [US3] Add loading skeletons during pagination fetches in `app/discover/page.tsx`
+- [x] T015 [P] [US3] Update `getDiscoverProfiles` in `lib/queries/profiles.ts` to accept `cursor` and `limit` parameters
+- [x] T016 [P] [US3] Implement Infinite Scroll logic (pre-fetch next 20 profiles when 5 cards remain) in `app/discover/page.tsx`
+- [x] T017 [US3] Add loading skeletons during pagination fetches in `app/discover/page.tsx`
 
 ---
 
@@ -64,15 +64,26 @@
 **Assignment**: **Developer D**
 **Dependencies**: None. Can run in parallel with US1, US2, and US3.
 
-- [ ] T018 [P] [US4] Migrate color and typography design tokens from `DESIGN.md` into `app/globals.css`
-- [ ] T019 [P] [US4] Replace hardcoded Tailwind classes (e.g., `bg-violet-500`, `--color-brand`) across components with official tokens
-- [ ] T020 [P] [US4] Create global Error Boundary in `app/error.tsx`
-- [ ] T021 [P] [US4] Create global not-found boundary in `app/global-error.tsx`
-- [ ] T022 [P] [US4] Extract `getAvatarBg` utility function into `lib/utils.ts` and ensure it maps exclusively to `DESIGN.md` tokens
-- [ ] T023 [US4] Refactor `app/matches/page.tsx` to use the unified `getAvatarBg`
-- [ ] T024 [US4] Refactor `app/my-team/page.tsx` to use the unified `getAvatarBg`
-- [ ] T025 [US4] Refactor `app/teams/[id]/page.tsx` to use the unified `getAvatarBg`
-- [ ] T026 [US4] Refactor `components/ProfileCard.tsx` to use the unified `getAvatarBg`
+- [x] T018 [P] [US4] Migrate color and typography design tokens from `DESIGN.md` into `app/globals.css`
+- [x] T019 [P] [US4] Replace hardcoded Tailwind classes (e.g., `bg-violet-500`, `--color-brand`) across components with official tokens
+- [x] T020 [P] [US4] Create global Error Boundary in `app/error.tsx`
+- [x] T021 [P] [US4] Create global not-found boundary in `app/global-error.tsx`
+- [x] T022 [P] [US4] Extract `getAvatarBg` utility function into `lib/utils.ts` and ensure it maps exclusively to `DESIGN.md` tokens
+- [x] T023 [US4] Refactor `app/matches/page.tsx` to use the unified `getAvatarBg`
+- [x] T024 [US4] Refactor `app/my-team/page.tsx` to use the unified `getAvatarBg`
+- [x] T025 [US4] Refactor `app/teams/[id]/page.tsx` to use the unified `getAvatarBg`
+- [x] T026 [US4] Refactor `components/ProfileCard.tsx` to use the unified `getAvatarBg`
+
+---
+
+## 🧪 Phase 6: Testing & Observability (Polish)
+**Goal**: Satisfy constitution mandates for Test-First custom hooks and Observability console cleanup.
+**Assignment**: **Developer A/B**
+**Dependencies**: Should be completed alongside or immediately following Phase 2 & 4.
+
+- [ ] T027 [P] [US1] Write unit tests for `useAuth` hook in `hooks/__tests__/useAuth.test.tsx`
+- [ ] T028 [P] [US3] Write unit tests for `useSwipe` hook in `hooks/__tests__/useSwipe.test.tsx`
+- [ ] T029 [P] Remove all 17 `console.error` statements from production hooks, pages, and queries, replacing them with proper error handling/silent catch blocks.
 
 ---
 

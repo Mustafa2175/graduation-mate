@@ -11,7 +11,7 @@ import {
   leaveTeam,
   updateTeamDetails,
 } from "@/lib/queries/teams";
-import { getInitials, getTrackBadge, cn } from "@/lib/utils";
+import { getInitials, getTrackBadge, getAvatarBg, cn } from "@/lib/utils";
 import {
   Users,
   Sparkles,
@@ -27,22 +27,6 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import SkillBadge from "@/components/profile/SkillBadge";
 
-function getAvatarBg(name: string) {
-  const colors = [
-    "bg-gradient-to-tr from-pink-500 to-rose-500",
-    "bg-gradient-to-tr from-purple-500 to-indigo-500",
-    "bg-gradient-to-tr from-blue-500 to-cyan-500",
-    "bg-gradient-to-tr from-emerald-500 to-teal-500",
-    "bg-gradient-to-tr from-amber-500 to-orange-500",
-    "bg-gradient-to-tr from-red-500 to-pink-500",
-  ];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const index = Math.abs(hash) % colors.length;
-  return colors[index];
-}
 
 export default function MyTeamPage() {
   const router = useRouter();
@@ -223,12 +207,12 @@ export default function MyTeamPage() {
       <div className="p-6 h-[calc(100vh-80px)] overflow-y-auto flex flex-col justify-center items-center">
         <div className="w-full max-w-lg bg-white/80 backdrop-blur-2xl rounded-3xl border border-white/60 p-8 text-center shadow-sm flex flex-col items-center space-y-6 relative overflow-hidden">
           {/* Decorative subtle ambient gradient glows */}
-          <div className="absolute top-0 right-0 w-28 h-28 bg-[var(--color-brand)]/5 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-36 h-36 bg-[var(--color-brand)]/5 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute top-0 right-0 w-28 h-28 bg-dark-carbon/5 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-36 h-36 bg-dark-carbon/5 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="w-24 h-24 rounded-full bg-orange-50 flex items-center justify-center text-5xl relative ">
+          <div className="w-24 h-24 rounded-full bg-slate flex items-center justify-center text-5xl relative ">
             👥
-            <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[var(--color-brand)] text-white text-[10px] font-black flex items-center justify-center ">
+            <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-dark-carbon text-absolute-zero text-[10px] font-black flex items-center justify-center ">
               ✨
             </div>
           </div>
@@ -246,7 +230,7 @@ export default function MyTeamPage() {
 
           <div className="w-full pt-4 flex flex-col space-y-3">
             <Link href="/discover" className="block w-full">
-              <Button className="w-full flex items-center justify-center gap-2 font-bold shadow-md shadow-[var(--color-brand)]/10">
+              <Button className="w-full flex items-center justify-center gap-2 font-bold shadow-md shadow-dark-carbon/10">
                 <Compass className="w-4 h-4" /> Find Classmates (Discover)
               </Button>
             </Link>
@@ -486,7 +470,7 @@ export default function MyTeamPage() {
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
                   placeholder="e.g. MedLink Telemedicine"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 focus:border-[var(--brand)]"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-dark-carbon/20 focus:border-dark-carbon"
                 />
               </div>
 
@@ -505,7 +489,7 @@ export default function MyTeamPage() {
                   onChange={(e) => setProjectDescription(e.target.value)}
                   placeholder="Describe your graduation project goal, problems being solved, or final features..."
                   rows={4}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 focus:border-[var(--brand)] resize-none"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-dark-carbon/20 focus:border-dark-carbon resize-none"
                 />
               </div>
 
@@ -524,7 +508,7 @@ export default function MyTeamPage() {
                   value={projectTechnologies}
                   onChange={(e) => setProjectTechnologies(e.target.value)}
                   placeholder="e.g. Next.js, PyTorch, Flutter, Node.js"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 focus:border-[var(--brand)]"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-dark-carbon/20 focus:border-dark-carbon"
                 />
               </div>
 
@@ -543,7 +527,7 @@ export default function MyTeamPage() {
                   value={rolesNeeded}
                   onChange={(e) => setRolesNeeded(e.target.value)}
                   placeholder="e.g. Backend Developer, UI Designer"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 focus:border-[var(--brand)]"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-dark-carbon/20 focus:border-dark-carbon"
                 />
               </div>
 

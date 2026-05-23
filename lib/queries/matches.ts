@@ -2,7 +2,7 @@
 import { supabase } from '@/lib/supabase/client'
 
 const matchProfileSelect = `
-  id, full_name, track, skills, avatar_url,
+  id, full_name, track, skills, avatar_url, bio,
   profile_contacts (whatsapp_number, linkedin_url),
   team_members (
     teams (
@@ -23,6 +23,32 @@ export interface TeammateProfile {
   id: string;
   full_name: string;
   avatar_url: string | null;
+}
+
+export interface TeamData {
+  id: string;
+  name: string;
+  teammates: TeammateProfile[];
+}
+
+export interface MatchProfile {
+  id: string;
+  full_name: string;
+  track: string;
+  skills: string[] | null;
+  avatar_url: string | null;
+  bio: string | null;
+  profile_contacts?: any;
+}
+
+export interface ConnectionItem {
+  id: string;
+  type: 'MUTUAL' | 'INCOMING' | 'OUTGOING';
+  profile: MatchProfile;
+  matched_at: string;
+  teamName?: string;
+  teamId?: string;
+  teammates: TeammateProfile[];
 }
 
 export interface TeamData {
@@ -149,7 +175,7 @@ export async function getConnections(profileId: string) {
   if (matchesError) throw matchesError;
 
   const matchedProfileIds = new Set<string>();
-  const mutualConnections = (matches || []).map((m: any) => {
+  const mutualConnections: ConnectionItem[] = (matches || []).map((m: any) => {
     const p1 = Array.isArray(m.profile1) ? m.profile1[0] : m.profile1;
     const p2 = Array.isArray(m.profile2) ? m.profile2[0] : m.profile2;
     const other = p1.id === profileId ? p2 : p1;
@@ -157,14 +183,14 @@ export async function getConnections(profileId: string) {
     const teamData = extractTeamData(other);
     return {
       id: m.id,
-      type: 'MUTUAL',
+      type: 'MUTUAL' as const,
       profile: other,
       matched_at: m.matched_at,
       teamName: teamData?.name,
       teamId: teamData?.id,
       teammates: teamData?.teammates || []
     };
-  });
+  }) as ConnectionItem[];
 
   // 2. Fetch all swipes to/from this user
   const { data: allSwipes, error: swipesError } = await supabase
@@ -182,11 +208,10 @@ export async function getConnections(profileId: string) {
   );
 
   // Outgoing pending = I swiped RIGHT, and they are not mutually matched
-  const outgoingPendingIds = new Set(
-    swipes
-      .filter(s => s.from_profile_id === profileId && s.direction === 'RIGHT' && !matchedProfileIds.has(s.to_profile_id))
-      .map(s => s.to_profile_id)
+  const outgoingPendingSwipes = swipes.filter(
+    s => s.from_profile_id === profileId && s.direction === 'RIGHT' && !matchedProfileIds.has(s.to_profile_id)
   );
+  const outgoingPendingIds = new Set(outgoingPendingSwipes.map(s => s.to_profile_id));
 
   // Incoming pending = They swiped RIGHT on me, and I haven't swiped on them at all, and not mutually matched
   const incomingPendingSwipes = swipes.filter(
@@ -224,31 +249,14 @@ export async function getConnections(profileId: string) {
     profiles?.forEach(p => profilesMap.set(p.id, p));
   }
 
-  const outgoingRequests = Array.from(outgoingPendingIds)
-    .map(id => {
-      const profile = profilesMap.get(id);
-      if (!profile) return null;
-      const teamData = extractTeamData(profile);
-      return {
-        id: `outgoing-${id}`,
-        type: 'OUTGOING',
-        profile,
-        matched_at: new Date().toISOString(),
-        teamName: teamData?.name,
-        teamId: teamData?.id,
-        teammates: teamData?.teammates || []
-      };
-    })
-    .filter(Boolean);
-
-  const incomingRequests = incomingPendingSwipes
+  const outgoingRequests: ConnectionItem[] = outgoingPendingSwipes
     .map(s => {
-      const profile = profilesMap.get(s.from_profile_id);
+      const profile = profilesMap.get(s.to_profile_id);
       if (!profile) return null;
       const teamData = extractTeamData(profile);
       return {
-        id: `incoming-${s.from_profile_id}`,
-        type: 'INCOMING',
+        id: `outgoing-${s.to_profile_id}`,
+        type: 'OUTGOING' as const,
         profile,
         matched_at: s.created_at,
         teamName: teamData?.name,
@@ -256,7 +264,24 @@ export async function getConnections(profileId: string) {
         teammates: teamData?.teammates || []
       };
     })
-    .filter(Boolean);
+    .filter(Boolean) as ConnectionItem[];
+
+  const incomingRequests: ConnectionItem[] = incomingPendingSwipes
+    .map(s => {
+      const profile = profilesMap.get(s.from_profile_id);
+      if (!profile) return null;
+      const teamData = extractTeamData(profile);
+      return {
+        id: `incoming-${s.from_profile_id}`,
+        type: 'INCOMING' as const,
+        profile,
+        matched_at: s.created_at, // Use the swipe creation time as the "matched_at" for pending requests
+        teamName: teamData?.name,
+        teamId: teamData?.id,
+        teammates: teamData?.teammates || []
+      };
+    })
+    .filter(Boolean) as ConnectionItem[];
 
   incomingRequests.sort((a: any, b: any) => new Date(b.matched_at).getTime() - new Date(a.matched_at).getTime());
 

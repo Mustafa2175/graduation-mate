@@ -4,26 +4,11 @@
 import { useState } from "react";
 import { Briefcase, MessageCircle } from "lucide-react";
 import type { Profile } from "@/types";
-import { getInitials, getTrackBadge } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { getInitials, getTrackBadge, getAvatarBg, cn } from "@/lib/utils";
 import SkillBadge from "./SkillBadge";
 import TeammateAvatars from "./TeammateAvatars";
 import Badge from "@/components/ui/Badge";
 
-// Deterministic background color from name
-const AVATAR_BG = [
-  "bg-violet-500",
-  "bg-blue-500",
-  "bg-emerald-500",
-  "bg-orange-500",
-  "bg-pink-500",
-  "bg-teal-500",
-];
-function getAvatarBg(name: string) {
-  if (!name) return AVATAR_BG[0];
-  const code = name.charCodeAt(0) + (name.charCodeAt(1) || 0);
-  return AVATAR_BG[code % AVATAR_BG.length];
-}
 
 const COMMITMENT_LABELS: Record<string, string> = {
   LOW: "Low commitment",
@@ -125,7 +110,7 @@ export default function ProfileCard({
             />
           </div>
           {profile.department && (
-            <p className="text-xs font-semibold text-[var(--brand)] uppercase tracking-wider truncate mt-0.5">
+            <p className="text-xs font-semibold text-slate uppercase tracking-wider truncate mt-0.5">
               {profile.department}
             </p>
           )}
@@ -207,7 +192,7 @@ export default function ProfileCard({
                 href={`https://wa.me/${profile.whatsapp_number.replace(/\D/g, "")}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--brand)] px-4 py-2 text-xs font-medium text-white hover:bg-[var(--brand)]/90 transition-all shadow-[var(--shadow-float)]"
+                className="inline-flex items-center gap-1.5 rounded-full bg-neon-green px-4 py-2 text-xs font-medium text-polar-white hover:bg-neon-green/90 transition-all shadow-sm"
               >
                 <MessageCircle className="w-3.5 h-3.5" />
                 WhatsApp

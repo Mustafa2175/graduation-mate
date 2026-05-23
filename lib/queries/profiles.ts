@@ -22,6 +22,8 @@ function flattenProfileRow(data: Profile & { profile_contacts?: ProfileContactsR
 export async function getDiscoverProfiles(
   currentProfileId: string,
   swipedIds: string[],
+  limit: number = 20,
+  cursor?: string // ISO timestamp of the last fetched profile's created_at
 ) {
   // Fetch current user's team_id to filter out teammates
   const { data: currentProfile } = await supabase
@@ -67,7 +69,12 @@ export async function getDiscoverProfiles(
     query = query.not("id", "in", `(${excludeIds.join(",")})`);
   }
 
-  return query.order("created_at", { ascending: false });
+  if (cursor) {
+    // Pagination: we order by created_at desc, so we want items created *before* the cursor
+    query = query.lt("created_at", cursor);
+  }
+
+  return query.order("created_at", { ascending: false }).limit(limit);
 }
 
 export async function getProfileById(id: string) {

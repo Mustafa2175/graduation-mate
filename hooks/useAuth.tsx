@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { supabase } from "@/lib/supabase/client";
 
 const STORAGE_KEY = "teamup_user";
@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUserState] = useState<StoredUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchUser = async (): Promise<StoredUser | null> => {
+  const fetchUser = useCallback(async (): Promise<StoredUser | null> => {
     if (isLogoutInProgress()) {
       removeCachedUser();
       setUserState(null);
@@ -117,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     writeCachedUser(freshUser);
     setUserState(freshUser);
     return freshUser;
-  };
+  }, []);
 
   useEffect(() => {
     // Initial fetch
@@ -156,7 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       authListener.subscription.unsubscribe();
       window.removeEventListener("storage", handleStorage);
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fetchUser]);
 
   const getFreshUser = async () => {
     return await fetchUser();
@@ -184,14 +184,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }),
       ]);
 
-      if (timeoutId) clearTimeout(timeoutId);
       if (result && result.error) throw result.error;
     } catch (error) {
       signOutError = error;
       console.error("[auth] logout:signOut failed", error);
     } finally {
       if (timeoutId) clearTimeout(timeoutId);
-      removeCachedUser();
     }
 
     return { error: signOutError };
