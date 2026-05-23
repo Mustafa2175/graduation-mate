@@ -7,7 +7,6 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { getConnections, resolveProfileContacts } from "@/lib/queries/matches";
 import { insertSwipe, checkMutualMatch } from "@/lib/queries/swipes";
 import { createMatch } from "@/lib/queries/matches";
-import { getTeamById, getTeamMembers } from "@/lib/queries/teams";
 import { getInitials, getTrackBadge, cn } from "@/lib/utils";
 import { MessageCircle, Briefcase, Lock, Unlock, Check, X } from "lucide-react";
 import Badge from "@/components/ui/Badge";
@@ -45,13 +44,25 @@ function timeAgo(dateString: string) {
   return date.toLocaleDateString();
 }
 
+import type { Profile } from "@/types";
+
+interface ConnectionItem {
+  id: string;
+  type: "MUTUAL" | "INCOMING" | "OUTGOING";
+  profile: Profile;
+  matched_at: string;
+  teamName: string | null;
+  teamId: string | null;
+  teammates: Profile[];
+}
+
 export default function MatchesPage() {
   const router = useRouter();
   const { getFreshUser } = useCurrentUser();
   
-  const [mutual, setMutual] = useState<any[]>([]);
-  const [incoming, setIncoming] = useState<any[]>([]);
-  const [outgoing, setOutgoing] = useState<any[]>([]);
+  const [mutual, setMutual] = useState<ConnectionItem[]>([]);
+  const [incoming, setIncoming] = useState<ConnectionItem[]>([]);
+  const [outgoing, setOutgoing] = useState<ConnectionItem[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string>("");
@@ -69,37 +80,14 @@ export default function MatchesPage() {
 
     try {
       const data = await getConnections(user.profileId);
-      
-      const fetchTeams = async (list: any[]) => {
-        return Promise.all(
-          list.map(async (item: any) => {
-            const profile = item.profile;
-            if (profile && profile.team_id) {
-              try {
-                const team = await getTeamById(profile.team_id);
-                const members = await getTeamMembers(profile.team_id);
-                const teammates = members.filter((m: any) => m.id !== profile.id);
-                return { ...item, teamName: team?.name || "Team", teammates: teammates || [] };
-              } catch (err) {
-                console.error("Error fetching team", err);
-              }
-            }
-            return item;
-          })
-        );
-      };
 
-      const mutualWithTeams = await fetchTeams(data.mutual);
-      const incomingWithTeams = await fetchTeams(data.incoming);
-      const outgoingWithTeams = await fetchTeams(data.outgoing);
-
-      setMutual(mutualWithTeams);
-      setIncoming(incomingWithTeams);
-      setOutgoing(outgoingWithTeams);
+      setMutual(data.mutual);
+      setIncoming(data.incoming);
+      setOutgoing(data.outgoing);
       
       if (updateTabs) {
-        if (incomingWithTeams.length > 0) setActiveTab("invites");
-        else if (mutualWithTeams.length > 0) setActiveTab("matches");
+        if (data.incoming.length > 0) setActiveTab("invites");
+        else if (data.mutual.length > 0) setActiveTab("matches");
         else setActiveTab("invites");
       }
       

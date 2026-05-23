@@ -35,3 +35,19 @@ export function getTrackBadge(track: string | null | undefined) {
   }
   return { label: track || 'Other', color: 'bg-gray-100 text-gray-700' }
 }
+
+export const AVATAR_BG_COLORS = [
+  "bg-violet-500",
+  "bg-blue-500",
+  "bg-emerald-500",
+  "bg-orange-500",
+  "bg-pink-500",
+  "bg-teal-500",
+];
+
+export function getAvatarBg(name: string | null | undefined): string {
+  const fallback = AVATAR_BG_COLORS[0];
+  if (!name) return fallback;
+  const code = name.charCodeAt(0) + (name.charCodeAt(1) || 0);
+  return AVATAR_BG_COLORS[code % AVATAR_BG_COLORS.length];
+}

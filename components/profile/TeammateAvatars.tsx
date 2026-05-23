@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
-import { getInitials } from '@/lib/utils'
+import { getInitials, getAvatarBg } from '@/lib/utils'
 
 interface Teammate {
   id: string
@@ -11,28 +11,19 @@ interface Teammate {
   avatar_url: string | null
 }
 
-const AVATAR_COLORS = [
-  'bg-violet-400',
-  'bg-blue-400',
-  'bg-emerald-400',
-  'bg-orange-400',
-  'bg-pink-400',
-  'bg-teal-400',
-]
-
-function getAvatarColor(name: string) {
-  const code = name.charCodeAt(0) + (name.charCodeAt(1) || 0)
-  return AVATAR_COLORS[code % AVATAR_COLORS.length]
-}
-
 interface TeammateAvatarsProps {
   teamId: string | null
+  preloadedTeammates?: Teammate[]
 }
 
-export default function TeammateAvatars({ teamId }: TeammateAvatarsProps) {
+export default function TeammateAvatars({ teamId, preloadedTeammates }: TeammateAvatarsProps) {
   const [teammates, setTeammates] = useState<Teammate[]>([])
 
   useEffect(() => {
+    if (preloadedTeammates) {
+      setTeammates(preloadedTeammates)
+      return
+    }
     if (!teamId) return
 
     supabase
@@ -42,11 +33,11 @@ export default function TeammateAvatars({ teamId }: TeammateAvatarsProps) {
       .then(({ data }) => {
         if (!data) return
         const profiles = data
-          .map((m: any) => m.profiles)
+          .map((m: any) => Array.isArray(m.profiles) ? m.profiles[0] : m.profiles)
           .filter(Boolean) as Teammate[]
         setTeammates(profiles)
       })
-  }, [teamId])
+  }, [teamId, preloadedTeammates])
 
   if (!teamId || teammates.length === 0) return null
 
@@ -59,14 +50,14 @@ export default function TeammateAvatars({ teamId }: TeammateAvatarsProps) {
       <div className="flex -space-x-2">
         {visible.map((t) => (
           <div
-            key={t.id}
-            className="w-6 h-6 rounded-full ring-2 ring-white overflow-hidden flex items-center justify-center text-[9px] font-bold text-white"
-            title={t.full_name}
+             key={t.id}
+             className="w-6 h-6 rounded-full ring-2 ring-white overflow-hidden flex items-center justify-center text-[9px] font-bold text-white"
+             title={t.full_name}
           >
             {t.avatar_url ? (
               <img src={t.avatar_url} alt={t.full_name} className="w-full h-full object-cover" />
             ) : (
-              <div className={`w-full h-full flex items-center justify-center ${getAvatarColor(t.full_name)}`}>
+              <div className={`w-full h-full flex items-center justify-center ${getAvatarBg(t.full_name)}`}>
                 {getInitials(t.full_name)}
               </div>
             )}

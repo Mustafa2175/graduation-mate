@@ -4,26 +4,10 @@
 import { useState } from "react";
 import { Briefcase, MessageCircle } from "lucide-react";
 import type { Profile } from "@/types";
-import { getInitials, getTrackBadge } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { getInitials, getTrackBadge, cn, getAvatarBg } from "@/lib/utils";
 import SkillBadge from "./SkillBadge";
 import TeammateAvatars from "./TeammateAvatars";
 import Badge from "@/components/ui/Badge";
-
-// Deterministic background color from name
-const AVATAR_BG = [
-  "bg-violet-500",
-  "bg-blue-500",
-  "bg-emerald-500",
-  "bg-orange-500",
-  "bg-pink-500",
-  "bg-teal-500",
-];
-function getAvatarBg(name: string) {
-  if (!name) return AVATAR_BG[0];
-  const code = name.charCodeAt(0) + (name.charCodeAt(1) || 0);
-  return AVATAR_BG[code % AVATAR_BG.length];
-}
 
 const COMMITMENT_LABELS: Record<string, string> = {
   LOW: "Low commitment",
@@ -58,6 +42,13 @@ export default function ProfileCard({
   const visibleSkills = skills.slice(0, 6);
   const extraSkills = skills.length - 6;
 
+  const teammates = profile.team_members
+    ? (Array.isArray(profile.team_members) ? profile.team_members : [profile.team_members])
+        .map((m: any) => Array.isArray(m.profiles) ? m.profiles[0] : m.profiles)
+        .filter(Boolean)
+        .filter((t: any) => t.id !== profile.id)
+    : [];
+
   const teamStatusPill = () => {
     switch (profile.team_status) {
       case "LOOKING":
@@ -78,7 +69,7 @@ export default function ProfileCard({
   return (
     <div
       className={cn(
-        'relative bg-white/90 backdrop-blur-2xl rounded-3xl border border-white/60 shadow-sm p-6 space-y-4 overflow-hidden transition-all h-full flex flex-col justify-between',
+        'relative bg-white/90 backdrop-blur-2xl rounded-3xl border border-white/60 shadow-sm p-6 space-y-4 overflow-hidden transition-all duration-300 hover:scale-[1.01] hover:shadow-md h-full flex flex-col justify-between',
         !profile.is_available && 'opacity-60'
       )}
     >
@@ -122,6 +113,8 @@ export default function ProfileCard({
                 profile.is_available ? "bg-emerald-500" : "bg-neutral-300",
               )}
               title={profile.is_available ? "Available" : "Not available"}
+              role="img"
+              aria-label={profile.is_available ? "Available for team" : "Unavailable for team"}
             />
           </div>
           {profile.department && (
@@ -187,7 +180,7 @@ export default function ProfileCard({
 
       {/* Bottom row: teammate avatars + action buttons */}
       <div className="flex items-center justify-between pt-1">
-        <TeammateAvatars teamId={profile.team_id} />
+        <TeammateAvatars teamId={profile.team_id} preloadedTeammates={teammates} />
 
         {showActions && (
           <div className="flex gap-2 ml-auto">
@@ -196,7 +189,8 @@ export default function ProfileCard({
                 href={profile.linkedin_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full bg-[#0b0f1a] px-4 py-2 text-xs font-medium text-white hover:bg-[#0b0f1a]/90 transition-all shadow-sm"
+                aria-label={`View ${fullName}'s LinkedIn profile`}
+                className="inline-flex items-center gap-1.5 rounded-full bg-[#0b0f1a] px-4 py-2 text-xs font-medium text-white hover:bg-[#0b0f1a]/95 hover:scale-[1.03] active:scale-[0.97] transition-all shadow-sm cursor-pointer"
               >
                 <Briefcase className="w-3.5 h-3.5" />
                 LinkedIn
@@ -207,7 +201,8 @@ export default function ProfileCard({
                 href={`https://wa.me/${profile.whatsapp_number.replace(/\D/g, "")}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--brand)] px-4 py-2 text-xs font-medium text-white hover:bg-[var(--brand)]/90 transition-all shadow-[var(--shadow-float)]"
+                aria-label={`Chat with ${fullName} on WhatsApp`}
+                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--brand)] px-4 py-2 text-xs font-medium text-white hover:bg-[var(--brand)]/95 hover:scale-[1.03] active:scale-[0.97] transition-all shadow-[var(--shadow-float)] cursor-pointer"
               >
                 <MessageCircle className="w-3.5 h-3.5" />
                 WhatsApp

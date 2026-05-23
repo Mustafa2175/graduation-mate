@@ -22,6 +22,10 @@ function flattenProfileRow(data: Profile & { profile_contacts?: ProfileContactsR
 export async function getDiscoverProfiles(
   currentProfileId: string,
   swipedIds: string[],
+  page?: number,
+  limit?: number,
+  filterTrack?: string,
+  filterSkills?: string[]
 ) {
   // Fetch current user's team_id to filter out teammates
   const { data: currentProfile } = await supabase
@@ -67,7 +71,23 @@ export async function getDiscoverProfiles(
     query = query.not("id", "in", `(${excludeIds.join(",")})`);
   }
 
-  return query.order("created_at", { ascending: false });
+  if (filterTrack) {
+    query = query.eq("track", filterTrack);
+  }
+
+  if (filterSkills && filterSkills.length > 0) {
+    query = query.contains("skills", filterSkills);
+  }
+
+  query = query.order("created_at", { ascending: false });
+
+  if (page && limit) {
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+    query = query.range(from, to);
+  }
+
+  return query;
 }
 
 export async function getProfileById(id: string) {

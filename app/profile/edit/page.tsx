@@ -21,63 +21,16 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { supabase } from "@/lib/supabase/client";
 import { toast } from "react-hot-toast";
 import Input from "@/components/ui/Input";
-import Button from "@/components/ui/Button";
 import Toggle from "@/components/ui/Toggle";
 import AvatarUpload from "@/components/profile/AvatarUpload";
-import { getInitials } from "@/lib/utils";
+import type { Profile, Team } from "@/types";
 
-const TRACK_OPTIONS = [
-  "Artificial Intelligence",
-  "Machine Learning",
-  "Deep Learning",
-  "Generative AI",
-  "Natural Language Processing",
-  "Computer Vision",
-  "Robotics",
-  "Data Science",
-  "Data Analysis",
-  "Data Engineering",
-  "Big Data Engineering",
-  "Business Intelligence",
-  "Software Engineering",
-  "Backend Development",
-  "Frontend Development",
-  "Full Stack Development",
-  "Mobile App Development",
-  "Android Development",
-  "iOS Development",
-  "Game Development",
-  "Web Development",
-  "Cloud Computing",
-  "DevOps",
-  "Site Reliability Engineering",
-  "Cybersecurity",
-  "Ethical Hacking",
-  "Digital Forensics",
-  "Network Security",
-  "Blockchain Development",
-  "Embedded Systems",
-  "Internet of Things (IoT)",
-  "Operating Systems",
-  "Database Administration",
-  "Database Engineering",
-  "Distributed Systems",
-  "Computer Networks",
-  "System Programming",
-  "Compiler Design",
-  "Quantum Computing",
-  "Bioinformatics",
-  "Human-Computer Interaction",
-  "UI/UX Design",
-  "AR/VR Development",
-  "Product Management",
-  "Technical Project Management",
-  "IT Support",
-  "IT Administration",
-  "Automation Engineering",
-  "MLOps",
-  "AIOps",
-];
+// Import Modular Decomposed Sections
+import BasicInfoSection from "@/components/profile/edit/BasicInfoSection";
+import AcademicTrackSection from "@/components/profile/edit/AcademicTrackSection";
+import SkillsSection from "@/components/profile/edit/SkillsSection";
+import AboutSection from "@/components/profile/edit/AboutSection";
+import TeamSection from "@/components/profile/edit/TeamSection";
 
 const schema = z.object({
   full_name: z.string().min(1, "Full name is required"),
@@ -97,26 +50,8 @@ const schema = z.object({
     ),
   team_status: z.enum(["LOOKING", "COMPLETE", "LOOKING_FOR_MORE"]),
   looking_for_role: z.string().optional(),
+  commitment_level: z.enum(["LOW", "MEDIUM", "HIGH"]),
 });
-
-const SUGGESTED_SKILLS = [
-  "React",
-  "Next.js",
-  "Python",
-  "Machine Learning",
-  "Data Analysis",
-  "Figma",
-  "UI/UX",
-  "Node.js",
-  "PostgreSQL",
-  "Flutter",
-  "Java",
-  "C++",
-  "Cybersecurity",
-  "AWS",
-  "Docker",
-  "Swift",
-];
 
 type FormInput = z.input<typeof schema>;
 type FormData = z.output<typeof schema>;
@@ -127,23 +62,17 @@ export default function ProfileEditPage() {
 
   const [isAvailable, setIsAvailable] = useState(true);
   const [skills, setSkills] = useState<string[]>([]);
-  const [skillInput, setSkillInput] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [trackSearchTerm, setTrackSearchTerm] = useState("");
-  const [isTrackDropdownOpen, setIsTrackDropdownOpen] = useState(false);
-
-  const filteredTrackOptions = TRACK_OPTIONS.filter((option) =>
-    option.toLowerCase().includes(trackSearchTerm.toLowerCase()),
-  );
 
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
 
-  // Team state
-  const [team, setTeam] = useState<any>(null);
-  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  // Strict Team states
+  const [team, setTeam] = useState<Team | null>(null);
+  const [teamMembers, setTeamMembers] = useState<Profile[]>([]);
   const [teamNameInput, setTeamNameInput] = useState("");
   const [joinIdInput, setJoinIdInput] = useState("");
 
@@ -186,6 +115,7 @@ export default function ProfileEditPage() {
       whatsapp_number: data.whatsapp_number ?? "",
       team_status: data.team_status,
       looking_for_role: data.looking_for_role ?? "",
+      commitment_level: (["LOW", "MEDIUM", "HIGH"].includes(data.commitment_level) ? data.commitment_level : "MEDIUM") as any,
     });
     setSkills(data.skills ?? []);
     setIsAvailable(data.is_available);
@@ -195,8 +125,8 @@ export default function ProfileEditPage() {
     if (data.team_id) {
       const t = await getTeamById(data.team_id);
       const m = await getTeamMembers(data.team_id);
-      setTeam(t);
-      setTeamMembers(m);
+      setTeam(t as Team);
+      setTeamMembers(m as Profile[]);
     } else {
       setTeam(null);
       setTeamMembers([]);
@@ -218,17 +148,8 @@ export default function ProfileEditPage() {
     setAvatarPreview(URL.createObjectURL(file));
   };
 
-  const addSkill = () => {
-    const trimmed = skillInput.trim();
-    if (trimmed && !skills.includes(trimmed)) setSkills([...skills, trimmed]);
-    setSkillInput("");
-  };
-  const removeSkill = (skill: string) =>
-    setSkills(skills.filter((s) => s !== skill));
-
   const handleLogout = async () => {
     if (isLoggingOut) return;
-
     setIsLoggingOut(true);
 
     try {
@@ -243,9 +164,6 @@ export default function ProfileEditPage() {
       console.error("[profile/edit] logout:unexpected-error", error);
       toast.error("Logout hit an unexpected error. Redirecting...");
     } finally {
-      // Full document navigation is more reliable than client routing here: it
-      // forces the proxy layer to evaluate the updated Supabase cookies after
-      // sign-out and prevents stale client state from keeping protected UI alive.
       window.location.assign("/login");
     }
   };
@@ -275,7 +193,7 @@ export default function ProfileEditPage() {
         gpa: data.gpa ? Number(data.gpa) : null,
         track: data.track,
         skills,
-        commitment_level: "MEDIUM",
+        commitment_level: data.commitment_level,
         bio: data.bio || null,
         is_available: isAvailable,
         team_status: data.team_status,
@@ -308,7 +226,6 @@ export default function ProfileEditPage() {
     }
   };
 
-  // Team actions
   const handleCreateTeam = async () => {
     if (!teamNameInput.trim()) return;
     try {
@@ -345,8 +262,10 @@ export default function ProfileEditPage() {
   };
 
   const copyId = () => {
-    navigator.clipboard.writeText(profileId!);
-    toast.success("Your Profile ID copied!");
+    if (profileId) {
+      navigator.clipboard.writeText(profileId);
+      toast.success("Your Profile ID copied!");
+    }
   };
 
   if (isLoading) {
@@ -410,225 +329,24 @@ export default function ProfileEditPage() {
               />
             </section>
 
-            <section className="space-y-5 liquid-glass rounded-3xl p-6 border border-white/5">
-              <h2
-                style={{ fontFamily: "'Instrument Serif', serif" }}
-                className="text-2xl font-normal text-white/90 tracking-wide border-b border-white/5 pb-2"
-              >
-                Basic Info
-              </h2>
-              <Input
-                id="full_name"
-                label="Full Name *"
-                placeholder="e.g. Ahmed Ali"
-                labelClassName="text-white/70 font-medium text-xs tracking-wider uppercase"
-                className="bg-white/5 border-white/10 text-white placeholder-white/30 focus:ring-white focus:text-white"
-                {...register("full_name")}
-                error={errors.full_name?.message}
-              />
-              <Input
-                id="department"
-                label="Department"
-                placeholder="e.g. Computer Science"
-                labelClassName="text-white/70 font-medium text-xs tracking-wider uppercase"
-                className="bg-white/5 border-white/10 text-white placeholder-white/30 focus:ring-white focus:text-white"
-                {...register("department")}
-                error={errors.department?.message}
-              />
-              <Input
-                id="gpa"
-                label="GPA (0–4)"
-                type="number"
-                step="0.01"
-                placeholder="e.g. 3.5"
-                labelClassName="text-white/70 font-medium text-xs tracking-wider uppercase"
-                className="bg-white/5 border-white/10 text-white placeholder-white/30 focus:ring-white focus:text-white"
-                {...register("gpa")}
-                error={errors.gpa?.message}
-              />
-            </section>
+            <BasicInfoSection register={register} errors={errors} />
 
-            <section className="space-y-5 liquid-glass rounded-3xl p-6 border border-white/5">
-              <h2
-                style={{ fontFamily: "'Instrument Serif', serif" }}
-                className="text-2xl font-normal text-white/90 tracking-wide border-b border-white/5 pb-2"
-              >
-                Academic Track
-              </h2>
+            <AcademicTrackSection
+              trackSearchTerm={trackSearchTerm}
+              setTrackSearchTerm={setTrackSearchTerm}
+              setValue={setValue}
+              errors={errors}
+            />
 
-              <div className="relative flex flex-col gap-1.5 w-full">
-                <label
-                  htmlFor="track-search"
-                  className="text-white/70 font-medium text-xs tracking-wider uppercase"
-                >
-                  Track *
-                </label>
-                <div className="relative">
-                  <input
-                    id="track-search"
-                    type="text"
-                    value={trackSearchTerm}
-                    onChange={(e) => {
-                      setTrackSearchTerm(e.target.value);
-                      setValue("track", e.target.value, {
-                        shouldValidate: true,
-                      });
-                      setIsTrackDropdownOpen(true);
-                    }}
-                    onFocus={() => setIsTrackDropdownOpen(true)}
-                    onBlur={() => {
-                      setTimeout(() => setIsTrackDropdownOpen(false), 200);
-                    }}
-                    placeholder="Search for your desired track (e.g. Data Science)"
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-white transition-all"
-                    autoComplete="off"
-                  />
+            <SkillsSection skills={skills} setSkills={setSkills} />
 
-                  {isTrackDropdownOpen && filteredTrackOptions.length > 0 && (
-                    <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border border-white/10 bg-neutral-950 py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-none">
-                      {filteredTrackOptions.map((option) => (
-                        <li
-                          key={option}
-                          onMouseDown={() => {
-                            setTrackSearchTerm(option);
-                            setValue("track", option, { shouldValidate: true });
-                            setIsTrackDropdownOpen(false);
-                          }}
-                          className="relative cursor-pointer select-none px-4 py-2.5 transition-colors text-white hover:bg-white/10"
-                        >
-                          {option}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-                {errors.track && (
-                  <p className="text-red-400 text-xs mt-1">
-                    {errors.track.message}
-                  </p>
-                )}
-              </div>
-            </section>
-
-            <section className="space-y-5 liquid-glass rounded-3xl p-6 border border-white/5">
-              <h2
-                style={{ fontFamily: "'Instrument Serif', serif" }}
-                className="text-2xl font-normal text-white/90 tracking-wide border-b border-white/5 pb-2"
-              >
-                Skills
-              </h2>
-              <div className="flex gap-2">
-                <input
-                  value={skillInput}
-                  onChange={(e) => setSkillInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addSkill();
-                    }
-                  }}
-                  placeholder="Type a skill + Enter"
-                  className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-white transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={addSkill}
-                  className="rounded-xl bg-white text-[#00172B] px-5 text-sm font-semibold hover:bg-neutral-200 transition-colors"
-                >
-                  Add
-                </button>
-              </div>
-
-              {SUGGESTED_SKILLS.filter((s) => !skills.includes(s)).length >
-                0 && (
-                <div className="pt-2">
-                  <p className="text-[10px] text-white/40 mb-2 uppercase tracking-wider font-semibold">
-                    Suggested
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {SUGGESTED_SKILLS.filter((s) => !skills.includes(s))
-                      .slice(0, 12)
-                      .map((skill) => (
-                        <button
-                          key={skill}
-                          type="button"
-                          onClick={() => setSkills([...skills, skill])}
-                          className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-medium text-white/70 hover:bg-white/15 hover:text-white transition-colors"
-                        >
-                          + {skill}
-                        </button>
-                      ))}
-                  </div>
-                </div>
-              )}
-
-              {skills.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-3 border-t border-white/5">
-                  {skills.map((skill) => (
-                    <span
-                      key={skill}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/5 px-3.5 py-1 text-xs font-medium text-white"
-                    >
-                      {skill}{" "}
-                      <button
-                        type="button"
-                        onClick={() => removeSkill(skill)}
-                        className="text-white/40 hover:text-white ml-1"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            <section className="space-y-5 liquid-glass rounded-3xl p-6 border border-white/5">
-              <h2
-                style={{ fontFamily: "'Instrument Serif', serif" }}
-                className="text-2xl font-normal text-white/90 tracking-wide border-b border-white/5 pb-2"
-              >
-                About
-              </h2>
-              <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="bio"
-                  className="text-white/70 font-medium text-xs tracking-wider uppercase"
-                >
-                  Bio
-                </label>
-                <textarea
-                  id="bio"
-                  {...register("bio")}
-                  rows={3}
-                  maxLength={300}
-                  placeholder="Tell teammates about yourself..."
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/30 resize-none focus:outline-none focus:ring-2 focus:ring-white transition-all"
-                />
-                <p className="text-[10px] text-neutral-400 text-right">
-                  {bio.length}/300
-                </p>
-              </div>
-              <Input
-                id="linkedin_url"
-                label="LinkedIn URL *"
-                type="url"
-                placeholder="https://linkedin.com/in/..."
-                labelClassName="text-white/70 font-medium text-xs tracking-wider uppercase"
-                className="bg-white/5 border-white/10 text-white placeholder-white/30 focus:ring-white focus:text-white"
-                {...register("linkedin_url")}
-                error={errors.linkedin_url?.message}
-              />
-              <Input
-                id="whatsapp_number"
-                label="WhatsApp Number *"
-                placeholder="+201234567890"
-                labelClassName="text-white/70 font-medium text-xs tracking-wider uppercase"
-                className="bg-white/5 border-white/10 text-white placeholder-white/30 focus:ring-white focus:text-white"
-                {...register("whatsapp_number")}
-                error={errors.whatsapp_number?.message}
-              />
-            </section>
+            <AboutSection
+              register={register}
+              bioLength={bio.length}
+              errors={errors}
+              watch={watch}
+              setValue={setValue}
+            />
 
             <section className="space-y-5 liquid-glass rounded-3xl p-6 border border-white/5">
               <h2
@@ -689,124 +407,19 @@ export default function ProfileEditPage() {
           </form>
 
           <div className="space-y-8">
-            {/* TEAM SYSTEM SECTION */}
-            <section className="space-y-5 liquid-glass rounded-3xl p-6 border border-white/5">
-              <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                <h2
-                  style={{ fontFamily: "'Instrument Serif', serif" }}
-                  className="text-2xl font-normal text-white/90 tracking-wide"
-                >
-                  Your Team
-                </h2>
-                <button
-                  onClick={copyId}
-                  className="text-xs text-white/60 hover:text-white font-semibold uppercase tracking-wider transition-colors cursor-pointer bg-white/5 border border-white/10 px-3 py-1.5 rounded-full"
-                >
-                  Copy Invite ID
-                </button>
-              </div>
-
-              {!team ? (
-                <div className="space-y-6 pt-2">
-                  {/* Create Team */}
-                  <div className="space-y-3">
-                    <label className="text-white/70 font-medium text-xs tracking-wider uppercase">
-                      Create a Team
-                    </label>
-                    <Input
-                      value={teamNameInput}
-                      onChange={(e) => setTeamNameInput(e.target.value)}
-                      placeholder="Enter Team Name"
-                      className="bg-white/5 border-white/10 text-white placeholder-white/30 focus:ring-white focus:text-white"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleCreateTeam}
-                      className="w-full relative overflow-hidden rounded-full py-3 text-sm font-semibold tracking-wide text-neutral-950 bg-white hover:bg-neutral-100 transition-all cursor-pointer"
-                    >
-                      Create new team
-                    </button>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="h-px bg-white/10 flex-1" />
-                    <span className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">
-                      OR
-                    </span>
-                    <div className="h-px bg-white/10 flex-1" />
-                  </div>
-
-                  {/* Join Team */}
-                  <div className="space-y-3">
-                    <label className="text-white/70 font-medium text-xs tracking-wider uppercase">
-                      Join Existing Team
-                    </label>
-                    <Input
-                      value={joinIdInput}
-                      onChange={(e) => setJoinIdInput(e.target.value)}
-                      placeholder="Team Invite Token"
-                      className="bg-white/5 border-white/10 text-white placeholder-white/30 focus:ring-white focus:text-white"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleJoinTeam}
-                      className="w-full relative overflow-hidden rounded-full py-3 text-sm font-semibold tracking-wide text-neutral-950 bg-white hover:bg-neutral-100 transition-all cursor-pointer"
-                    >
-                      Join existing team
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-5 pt-2">
-                  <div>
-                    <h3 className="font-bold text-lg text-white">
-                      {team.name}
-                    </h3>
-                    <p className="text-xs text-white/50">
-                      {teamMembers.length} members
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    {teamMembers.map((m) => (
-                      <div
-                        key={m.id}
-                        className="flex items-center gap-3 bg-white/5 border border-white/5 p-3 rounded-2xl"
-                      >
-                        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center font-bold text-white text-xs overflow-hidden">
-                          {m.avatar_url ? (
-                            <img
-                              src={m.avatar_url}
-                              className="w-full h-full object-cover animate-in fade-in"
-                            />
-                          ) : (
-                            getInitials(m.full_name)
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-white truncate">
-                            {m.full_name}
-                          </p>
-                          {m.id === profileId && (
-                            <p className="text-[10px] text-white/40 font-medium">
-                              You
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleLeaveTeam}
-                    className="w-full relative overflow-hidden rounded-full py-3 text-sm font-semibold tracking-wide text-white bg-red-950/40 hover:bg-red-950/60 border border-red-500/10 hover:border-red-500/20 transition-all cursor-pointer shadow-md mt-2"
-                  >
-                    Leave Team
-                  </button>
-                </div>
-              )}
-            </section>
+            <TeamSection
+              team={team}
+              teamMembers={teamMembers}
+              profileId={profileId}
+              teamNameInput={teamNameInput}
+              setTeamNameInput={setTeamNameInput}
+              joinIdInput={joinIdInput}
+              setJoinIdInput={setJoinIdInput}
+              handleCreateTeam={handleCreateTeam}
+              handleJoinTeam={handleJoinTeam}
+              handleLeaveTeam={handleLeaveTeam}
+              copyId={copyId}
+            />
           </div>
         </div>
       </div>

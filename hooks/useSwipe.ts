@@ -14,7 +14,7 @@ import { createMatch } from "@/lib/queries/matches";
 import type { Profile } from "@/types";
 import { toast } from "react-hot-toast";
 
-export function useSwipe() {
+export function useSwipe(filterTrack?: string, filterSkills?: string[]) {
   const { getFreshUser } = useCurrentUser();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
@@ -40,6 +40,10 @@ export function useSwipe() {
       const { data, error } = await getDiscoverProfiles(
         user.profileId,
         swipedIds,
+        undefined,
+        undefined,
+        filterTrack,
+        filterSkills
       );
       if (error) throw error;
       if (data) {
@@ -58,7 +62,7 @@ export function useSwipe() {
 
   useEffect(() => {
     loadProfiles();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filterTrack, filterSkills]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSwipe = async (direction: "RIGHT" | "LEFT", profile: Profile) => {
     const pid = currentProfileId.current;

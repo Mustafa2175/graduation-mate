@@ -9,7 +9,12 @@ import { StepProps } from './types'
 
 const schema = z.object({
   full_name: z.string().min(1, 'Full name is required'),
-  email: z.string().email('Valid email is required'),
+  email: z.string()
+    .email('Valid email is required')
+    .refine(
+      (val) => val.toLowerCase().endsWith('.edu') || val.toLowerCase().endsWith('.edu.eg'),
+      'Only university emails (.edu or .edu.eg) are permitted'
+    ),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   department: z.string().min(1, 'Department is required'),
   gpa: z.coerce.number().min(0).max(4, 'GPA must be between 0 and 4').optional().or(z.literal('')),

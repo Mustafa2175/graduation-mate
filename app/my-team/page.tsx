@@ -11,7 +11,7 @@ import {
   leaveTeam,
   updateTeamDetails,
 } from "@/lib/queries/teams";
-import { getInitials, getTrackBadge, cn } from "@/lib/utils";
+import { getInitials, getTrackBadge, cn, getAvatarBg } from "@/lib/utils";
 import {
   Users,
   Sparkles,
@@ -26,23 +26,7 @@ import {
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import SkillBadge from "@/components/profile/SkillBadge";
-
-function getAvatarBg(name: string) {
-  const colors = [
-    "bg-gradient-to-tr from-pink-500 to-rose-500",
-    "bg-gradient-to-tr from-purple-500 to-indigo-500",
-    "bg-gradient-to-tr from-blue-500 to-cyan-500",
-    "bg-gradient-to-tr from-emerald-500 to-teal-500",
-    "bg-gradient-to-tr from-amber-500 to-orange-500",
-    "bg-gradient-to-tr from-red-500 to-pink-500",
-  ];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const index = Math.abs(hash) % colors.length;
-  return colors[index];
-}
+import type { Profile, Team } from "@/types";
 
 export default function MyTeamPage() {
   const router = useRouter();
@@ -51,8 +35,8 @@ export default function MyTeamPage() {
 
   // Loading & State
   const [isLoading, setIsLoading] = useState(true);
-  const [team, setTeam] = useState<any>(null);
-  const [teammates, setTeammates] = useState<any[]>([]);
+  const [team, setTeam] = useState<Team | null>(null);
+  const [teammates, setTeammates] = useState<Profile[]>([]);
 
   // Invitation Copy Feedback
   const [copied, setCopied] = useState(false);

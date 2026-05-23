@@ -23,6 +23,10 @@ export interface Profile {
   avatar_url: string | null;
   team_id: string | null;
   created_at: string;
+  team_members?: {
+    profile_id: string;
+    profiles: any;
+  }[];
 }
 
 export interface Swipe {

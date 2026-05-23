@@ -3,7 +3,14 @@ import { supabase } from '@/lib/supabase/client'
 
 const matchProfileSelect = `
   id, full_name, track, skills, avatar_url, team_id,
-  profile_contacts (whatsapp_number, linkedin_url)
+  profile_contacts (whatsapp_number, linkedin_url),
+  teams:team_id (
+    id, name, status, project_description, project_technologies, roles_needed,
+    team_members (
+      profile_id,
+      profiles:profile_id ( id, full_name, avatar_url )
+    )
+  )
 `
 
 export function resolveProfileContacts(profile: {
@@ -111,11 +118,22 @@ export async function getConnections(profileId: string) {
     const p2 = Array.isArray(m.profile2) ? m.profile2[0] : m.profile2;
     const other = p1.id === profileId ? p2 : p1;
     matchedProfileIds.add(other.id);
+
+    const teamData = Array.isArray(other.teams) ? other.teams[0] : other.teams;
+    const teammates = teamData?.team_members
+      ? teamData.team_members
+          .map((tm: any) => Array.isArray(tm.profiles) ? tm.profiles[0] : tm.profiles)
+          .filter((p: any) => p && p.id !== other.id)
+      : [];
+
     return {
       id: m.id,
-      type: 'MUTUAL',
+      type: 'MUTUAL' as const,
       profile: other,
       matched_at: m.matched_at,
+      teamName: teamData?.name || null,
+      teamId: teamData?.id || null,
+      teammates,
     };
   });
 
@@ -158,7 +176,14 @@ export async function getConnections(profileId: string) {
       .select(`
         id, full_name, department, gpa, track, skills,
         commitment_level, bio, is_available, team_status,
-        looking_for_role, avatar_url, team_id, created_at
+        looking_for_role, avatar_url, team_id, created_at,
+        teams:team_id (
+          id, name, status, project_description, project_technologies, roles_needed,
+          team_members (
+            profile_id,
+            profiles:profile_id ( id, full_name, avatar_url )
+          )
+        )
       `)
       .in('id', pendingProfileIds);
     profiles?.forEach(p => profilesMap.set(p.id, p));
@@ -168,27 +193,45 @@ export async function getConnections(profileId: string) {
     .map(id => {
       const profile = profilesMap.get(id);
       if (!profile) return null;
+      const teamData = Array.isArray(profile.teams) ? profile.teams[0] : profile.teams;
+      const teammates = teamData?.team_members
+        ? teamData.team_members
+            .map((tm: any) => Array.isArray(tm.profiles) ? tm.profiles[0] : tm.profiles)
+            .filter((p: any) => p && p.id !== profile.id)
+        : [];
       return {
         id: `outgoing-${id}`,
-        type: 'OUTGOING',
+        type: 'OUTGOING' as const,
         profile,
         matched_at: new Date().toISOString(),
+        teamName: teamData?.name || null,
+        teamId: teamData?.id || null,
+        teammates,
       };
     })
-    .filter(Boolean);
+    .filter((x): x is any => x !== null);
 
   const incomingRequests = incomingPendingSwipes
     .map(s => {
       const profile = profilesMap.get(s.from_profile_id);
       if (!profile) return null;
+      const teamData = Array.isArray(profile.teams) ? profile.teams[0] : profile.teams;
+      const teammates = teamData?.team_members
+        ? teamData.team_members
+            .map((tm: any) => Array.isArray(tm.profiles) ? tm.profiles[0] : tm.profiles)
+            .filter((p: any) => p && p.id !== profile.id)
+        : [];
       return {
         id: `incoming-${s.from_profile_id}`,
-        type: 'INCOMING',
+        type: 'INCOMING' as const,
         profile,
         matched_at: s.created_at,
+        teamName: teamData?.name || null,
+        teamId: teamData?.id || null,
+        teammates,
       };
     })
-    .filter(Boolean);
+    .filter((x): x is any => x !== null);
 
   incomingRequests.sort((a: any, b: any) => new Date(b.matched_at).getTime() - new Date(a.matched_at).getTime());
 

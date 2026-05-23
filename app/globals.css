@@ -3,19 +3,24 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fafafa;
+  --foreground: #0b0f1a;
   --color-brand: #0871E7;
-  --radius-card: 16px;
-  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --brand: #0871E7;
+  --radius-card: 20px;
+  --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  --shadow-float: 0 8px 30px rgba(8, 113, 231, 0.15);
+  --transition-all: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @theme inline {
     --color-background: var(--background);
     --color-foreground: var(--foreground);
     --color-brand: var(--color-brand);
+    --brand: var(--brand);
     --radius-card: var(--radius-card);
     --shadow-card: var(--shadow-card);
+    --shadow-float: var(--shadow-float);
     --font-instrument: "Instrument Serif", serif;
     --font-serif: "Instrument Serif", serif;
     --font-sans: "Inter", sans-serif;
