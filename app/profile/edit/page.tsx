@@ -17,7 +17,7 @@ import {
   getTeamMembers,
   getTeamById,
 } from "@/lib/queries/teams";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase/client";
 import { toast } from "react-hot-toast";
 import Input from "@/components/ui/Input";
@@ -123,7 +123,7 @@ type FormData = z.output<typeof schema>;
 
 export default function ProfileEditPage() {
   const router = useRouter();
-  const { getFreshUser, setCurrentUser, clearCurrentUser } = useCurrentUser();
+  const { getFreshUser, setCurrentUser, clearCurrentUser } = useAuth();
 
   const [isAvailable, setIsAvailable] = useState(true);
   const [skills, setSkills] = useState<string[]>([]);

@@ -3,38 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useAuth } from "@/hooks/useAuth";
 import { Compass, Handshake, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const { getFreshUser, onUserChanged } = useCurrentUser();
-  const [hasUser, setHasUser] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const refreshUser = async () => {
-      const user = await getFreshUser();
-      if (!isMounted) return;
-      setHasUser(!!user);
-      setAuthChecked(true);
-    };
-
-    refreshUser();
-    const unsubscribe = onUserChanged(refreshUser);
-
-    return () => {
-      isMounted = false;
-      unsubscribe();
-    };
-  }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  const { user, isLoading } = useAuth();
 
   if (
-    !authChecked ||
-    !hasUser ||
+    isLoading ||
+    !user ||
     pathname === "/login" ||
     pathname === "/profile/setup"
   ) {

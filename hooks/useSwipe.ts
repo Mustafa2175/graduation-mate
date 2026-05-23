@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useCurrentUser } from "./useCurrentUser";
+import { useAuth } from "./useAuth";
 import { getDiscoverProfiles } from "@/lib/queries/profiles";
 import {
   getSwipedIds,
@@ -15,7 +15,7 @@ import type { Profile } from "@/types";
 import { toast } from "react-hot-toast";
 
 export function useSwipe() {
-  const { getFreshUser } = useCurrentUser();
+  const { getFreshUser } = useAuth();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [isLoading, setIsLoading] = useState(true);

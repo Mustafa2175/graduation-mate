@@ -39,6 +39,10 @@ export async function checkMutualMatch(
 }
 
 export async function resetSwipes(fromProfileId: string) {
+  if (process.env.NODE_ENV !== "development") {
+    throw new Error("resetSwipes is only available in development mode");
+  }
+
   await supabase
     .from("matches")
     .delete()

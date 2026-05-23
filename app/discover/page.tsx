@@ -2,14 +2,14 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useAuth } from "@/hooks/useAuth";
 import { useSwipe } from "@/hooks/useSwipe";
 import SwipeCard from "@/components/discover/SwipeCard";
 import SwipeButtons from "@/components/discover/SwipeButtons";
 
 export default function DiscoverPage() {
   const router = useRouter();
-  const { getFreshUser } = useCurrentUser();
+  const { getFreshUser } = useAuth();
   const {
     profiles,
     currentIndex,

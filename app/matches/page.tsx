@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useAuth } from "@/hooks/useAuth";
 import { getConnections, resolveProfileContacts } from "@/lib/queries/matches";
 import { insertSwipe, checkMutualMatch } from "@/lib/queries/swipes";
 import { createMatch } from "@/lib/queries/matches";
@@ -47,7 +47,7 @@ function timeAgo(dateString: string) {
 
 export default function MatchesPage() {
   const router = useRouter();
-  const { getFreshUser } = useCurrentUser();
+  const { getFreshUser } = useAuth();
   
   const [mutual, setMutual] = useState<any[]>([]);
   const [incoming, setIncoming] = useState<any[]>([]);

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { updateProfile, upsertProfileContacts } from "@/lib/queries/profiles";
 import { joinTeam } from "@/lib/queries/teams";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase/client";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
@@ -36,7 +36,7 @@ export type SetupDraft = {
 
 export default function ProfileSetupPage() {
   const router = useRouter();
-  const { setCurrentUser } = useCurrentUser();
+  const { setCurrentUser } = useAuth();
 
   // Wizard States
   const [currentStep, setCurrentStep] = useState(1);
@@ -159,7 +159,7 @@ export default function ProfileSetupPage() {
           }
         }
 
-        // Populate the localStorage session so useCurrentUser.getUser()
+        // Populate the auth context so useAuth.getFreshUser()
         // returns the correct profile ID everywhere (discover, my-team, etc.).
         // The Supabase cookie session handles server-side auth; this entry
         // is the client-side fast-path used by useSwipe and other hooks.

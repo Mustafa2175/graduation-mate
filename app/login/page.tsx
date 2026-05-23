@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
+import { useAuth } from '@/hooks/useAuth'
 import Input from '@/components/ui/Input'
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
@@ -19,7 +19,7 @@ type FormData = z.infer<typeof schema>
 
 export default function LoginPage() {
   const router = useRouter()
-  const { setCurrentUser } = useCurrentUser()
+  const { setCurrentUser } = useAuth()
   const [serverError, setServerError] = useState('')
   const videoRef = useRef<HTMLVideoElement>(null)
   const [videoOpacity, setVideoOpacity] = useState(0)

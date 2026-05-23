@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useAuth } from "@/hooks/useAuth";
 import { getProfileById } from "@/lib/queries/profiles";
 import {
   getTeamById,
@@ -46,7 +46,7 @@ function getAvatarBg(name: string) {
 
 export default function MyTeamPage() {
   const router = useRouter();
-  const { getFreshUser } = useCurrentUser();
+  const { getFreshUser } = useAuth();
   const [currentUserId, setCurrentUserId] = useState<string>("");
 
   // Loading & State
