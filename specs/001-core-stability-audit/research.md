@@ -41,3 +41,10 @@
 **Rationale**: The current `getConnections` creates 2 additional queries per connection (`getTeamById` + `getTeamMembers`), causing exponential slowdowns (PERF-01). Using a relation join or fetching all unique `team_ids` in a single query solves this issue.
 **Alternatives considered**:
 - Client-side parallel fetching (e.g., `Promise.all`): Reduces latency slightly, but still hits the database connection pool excessively. Batching in the primary query is significantly better.
+
+## 7. Frontend Design System
+
+**Decision**: Utilize the existing `DESIGN.md` as the single source of truth for the design system.
+**Rationale**: `DESIGN.md` already contains comprehensive design tokens (colors, typography, spacing) and Tailwind v4 configuration. Integrating it prevents duplicated UI utilities and ensures UI consistency across all developers' work.
+**Alternatives considered**:
+- Create a new design system from scratch: Rejected because the existing one is highly detailed and fits the application's current brand perfectly.
