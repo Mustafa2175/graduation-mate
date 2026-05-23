@@ -1,0 +1,77 @@
+# Implementation Plan: Core Architecture & Stability Audit
+
+**Branch**: `001-core-stability-audit` | **Date**: 2026-05-23 | **Spec**: [spec.md](spec.md)
+
+**Input**: Feature specification from `/specs/001-core-stability-audit/spec.md`
+
+## Summary
+
+Perform a full system stability and architecture audit of TeamUp, fixing critical DB/RLS safety issues, resolving N+1 queries, addressing frontend performance, and unifying the authentication state.
+
+## Technical Context
+
+**Language/Version**: TypeScript / Node.js
+
+**Primary Dependencies**: Next.js, React, Supabase (@supabase/ssr), Tailwind CSS, Vitest, React Testing Library
+
+**Storage**: PostgreSQL (via Supabase)
+
+**Testing**: Vitest, React Testing Library (Unit & Integration)
+
+**Target Platform**: Web (mobile-first UI)
+
+**Project Type**: Web application
+
+**Performance Goals**: Fast discover query performance (< 200ms p95), fast initial paint.
+
+**Constraints**: Strict single team membership (max 1 team per user, enforced at DB level), configurable email domain enforcement.
+
+**Scale/Scope**: ~1000+ users (Multi-Campus)
+
+## Constitution Check
+
+*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+
+- **Test-First (NON-NEGOTIABLE)**: Tests for custom hooks (useSwipe, useCurrentUser) must be written before implementation changes if possible.
+- **Observability**: Ensure console statements are cleaned up and errors are logged appropriately.
+
+## Project Structure
+
+### Documentation (this feature)
+
+```text
+specs/001-core-stability-audit/
+├── plan.md              # This file
+├── research.md          # Phase 0 output
+├── data-model.md        # Phase 1 output
+├── quickstart.md        # Phase 1 output
+└── tasks.md             # Phase 2 output (/speckit-tasks command)
+```
+
+### Source Code (repository root)
+
+```text
+# Option 2: Web application
+app/
+├── (auth)/
+├── discover/
+├── matches/
+├── my-team/
+├── profile/
+└── teams/
+components/
+hooks/
+lib/
+supabase/
+└── migrations/
+```
+
+**Structure Decision**: Standard Next.js App Router structure with Supabase migrations.
+
+## Complexity Tracking
+
+> **Fill ONLY if Constitution Check has violations that must be justified**
+
+| Violation | Why Needed | Simpler Alternative Rejected Because |
+|-----------|------------|-------------------------------------|
+| None | N/A | N/A |
