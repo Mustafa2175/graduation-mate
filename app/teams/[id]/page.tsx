@@ -57,7 +57,7 @@ export default function TeamDetailsPage() {
           }
         }
       } catch (err) {
-        console.error("Error fetching read-only team details:", err);
+        // Silently catch error fetching read-only team details
       } finally {
         setIsLoading(false);
       }

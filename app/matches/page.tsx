@@ -66,7 +66,7 @@ export default function MatchesPage() {
       }
       
     } catch (err) {
-      console.error("Failed to load connections:", err);
+      // Silently catch error loading connections
     } finally {
       setIsLoading(false);
     }
@@ -119,7 +119,6 @@ export default function MatchesPage() {
       // Load connections in background without updating tabs to prevent layout shift
       loadConnections(false); 
     } catch (err: any) {
-      console.error(err);
       toast.error(err.message || "Failed to accept invite");
       // Revert optimistic update
       loadConnections();
@@ -141,7 +140,6 @@ export default function MatchesPage() {
       }
       loadConnections(false);
     } catch (err: any) {
-      console.error(err);
       toast.error(err.message || "Failed to skip invite");
       loadConnections(); // Revert
     } finally {

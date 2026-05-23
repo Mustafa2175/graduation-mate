@@ -170,7 +170,7 @@ export default function ProfileEditPage() {
 
     const { data, error } = await getProfileById(user.profileId);
     if (error || !data) {
-      console.error("Failed to load profile for edit:", error);
+      // Silently catch profile load error
       setIsLoading(false);
       router.replace("/login");
       return;
@@ -234,13 +234,13 @@ export default function ProfileEditPage() {
     try {
       const { error } = await clearCurrentUser();
       if (error) {
-        console.error("[profile/edit] logout failed", error);
+        // Silently catch logout error
         toast.error(
           "Signed out locally, but Supabase sign-out reported an error. Redirecting...",
         );
       }
     } catch (error) {
-      console.error("[profile/edit] logout:unexpected-error", error);
+      // Silently catch unexpected logout error
       toast.error("Logout hit an unexpected error. Redirecting...");
     } finally {
       // Full document navigation is more reliable than client routing here: it

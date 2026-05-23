@@ -137,10 +137,7 @@ export default function ProfileSetupPage() {
               avatar_url: publicUrl.publicUrl,
             });
           } else {
-            console.error("Avatar upload failed:", uploadError);
-            toast.error(
-              `Profile created, but failed to upload avatar: ${uploadError.message}`,
-            );
+            toast.error("Profile saved, but avatar upload failed.");
           }
         }
 

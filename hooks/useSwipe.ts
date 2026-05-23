@@ -57,7 +57,6 @@ export function useSwipe() {
         setHasMore(false);
       }
     } catch (e) {
-      console.error("Failed to load profiles", e);
       setLoadError(
         "Could not load discover profiles. Please refresh and try again.",
       );
@@ -87,7 +86,7 @@ export function useSwipe() {
         }
       }
     } catch (e) {
-      console.error("Swipe error", e);
+      // Silently catch swipe errors to avoid breaking the UX flow
     }
   }, []);
 
@@ -119,7 +118,6 @@ export function useSwipe() {
         setHasMore(false);
       }
     } catch (e) {
-      console.error("Failed to fetch more profiles", e);
       // UX improvement: Re-allow fetch attempts if a transient network error occurred
       setHasMore(true);
     } finally {
@@ -149,7 +147,6 @@ export function useSwipe() {
         setHasMore(false);
       }
     } catch (e) {
-      console.error("Failed to reset swipes", e);
       setLoadError(
         "Could not reset discover profiles. Please refresh and try again.",
       );

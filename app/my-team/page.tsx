@@ -99,7 +99,7 @@ export default function MyTeamPage() {
         setTeammates([]);
       }
     } catch (err) {
-      console.error("Error loading team dashboard data:", err);
+      // Silently catch error loading team dashboard data
     } finally {
       setIsLoading(false);
     }
@@ -165,7 +165,7 @@ export default function MyTeamPage() {
         setTeam(updatedTeam);
       }
     } catch (err) {
-      console.error("Error updating team optional details:", err);
+      // Silently catch error updating team optional details
     } finally {
       setIsSavingDetails(false);
     }
@@ -180,7 +180,7 @@ export default function MyTeamPage() {
       // Re-load to show empty state
       await loadTeamData(currentUserId);
     } catch (err) {
-      console.error("Error leaving graduation team:", err);
+      // Silently catch error leaving graduation team
       setIsLoading(false);
     }
   };

@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .maybeSingle();
 
     if (profileError) {
-      console.error("Failed to hydrate cached user profile:", profileError);
+      // Failed to hydrate cached user profile silently
     }
 
     const freshUser = {
@@ -187,7 +187,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (result && result.error) throw result.error;
     } catch (error) {
       signOutError = error;
-      console.error("[auth] logout:signOut failed", error);
     } finally {
       if (timeoutId) clearTimeout(timeoutId);
     }

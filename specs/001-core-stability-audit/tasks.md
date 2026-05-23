@@ -81,9 +81,9 @@
 **Assignment**: **Developer A/B**
 **Dependencies**: Should be completed alongside or immediately following Phase 2 & 4.
 
-- [ ] T027 [P] [US1] Write unit tests for `useAuth` hook in `hooks/__tests__/useAuth.test.tsx`
-- [ ] T028 [P] [US3] Write unit tests for `useSwipe` hook in `hooks/__tests__/useSwipe.test.tsx`
-- [ ] T029 [P] Remove all 17 `console.error` statements from production hooks, pages, and queries, replacing them with proper error handling/silent catch blocks.
+- [x] T027 [P] [US1] Write unit tests for `useAuth` hook in `hooks/__tests__/useAuth.test.tsx`
+- [x] T028 [P] [US3] Write unit tests for `useSwipe` hook in `hooks/__tests__/useSwipe.test.tsx`
+- [x] T029 [P] Remove all 17 `console.error` statements from production hooks, pages, and queries, replacing them with proper error handling/silent catch blocks.
 
 ---
 
