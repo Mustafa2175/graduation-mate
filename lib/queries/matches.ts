@@ -2,9 +2,52 @@
 import { supabase } from '@/lib/supabase/client'
 
 const matchProfileSelect = `
-  id, full_name, track, skills, avatar_url, team_id,
-  profile_contacts (whatsapp_number, linkedin_url)
+  id, full_name, track, skills, avatar_url,
+  profile_contacts (whatsapp_number, linkedin_url),
+  team_members (
+    teams (
+      id,
+      name,
+      team_members (
+        profiles (
+          id,
+          full_name,
+          avatar_url
+        )
+      )
+    )
+  )
 `
+
+export interface TeammateProfile {
+  id: string;
+  full_name: string;
+  avatar_url: string | null;
+}
+
+export interface TeamData {
+  id: string;
+  name: string;
+  teammates: TeammateProfile[];
+}
+
+export function extractTeamData(profile: any): TeamData | null {
+  const teamMember = Array.isArray(profile.team_members) ? profile.team_members[0] : profile.team_members;
+  const team = teamMember?.teams;
+  if (!team) return null;
+
+  const rawTeammates = Array.isArray(team.team_members) ? team.team_members : (team.team_members ? [team.team_members] : []);
+  
+  const teammates = rawTeammates
+    .map((tm: any) => tm.profiles)
+    .filter((p: any) => p && p.id !== profile.id); // Exclude the profile itself
+
+  return {
+    id: team.id,
+    name: team.name,
+    teammates
+  };
+}
 
 export function resolveProfileContacts(profile: {
   profile_contacts?:
@@ -111,11 +154,15 @@ export async function getConnections(profileId: string) {
     const p2 = Array.isArray(m.profile2) ? m.profile2[0] : m.profile2;
     const other = p1.id === profileId ? p2 : p1;
     matchedProfileIds.add(other.id);
+    const teamData = extractTeamData(other);
     return {
       id: m.id,
       type: 'MUTUAL',
       profile: other,
       matched_at: m.matched_at,
+      teamName: teamData?.name,
+      teamId: teamData?.id,
+      teammates: teamData?.teammates || []
     };
   });
 
@@ -158,7 +205,20 @@ export async function getConnections(profileId: string) {
       .select(`
         id, full_name, department, gpa, track, skills,
         commitment_level, bio, is_available, team_status,
-        looking_for_role, avatar_url, team_id, created_at
+        looking_for_role, avatar_url, created_at,
+        team_members (
+          teams (
+            id,
+            name,
+            team_members (
+              profiles (
+                id,
+                full_name,
+                avatar_url
+              )
+            )
+          )
+        )
       `)
       .in('id', pendingProfileIds);
     profiles?.forEach(p => profilesMap.set(p.id, p));
@@ -168,11 +228,15 @@ export async function getConnections(profileId: string) {
     .map(id => {
       const profile = profilesMap.get(id);
       if (!profile) return null;
+      const teamData = extractTeamData(profile);
       return {
         id: `outgoing-${id}`,
         type: 'OUTGOING',
         profile,
         matched_at: new Date().toISOString(),
+        teamName: teamData?.name,
+        teamId: teamData?.id,
+        teammates: teamData?.teammates || []
       };
     })
     .filter(Boolean);
@@ -181,11 +245,15 @@ export async function getConnections(profileId: string) {
     .map(s => {
       const profile = profilesMap.get(s.from_profile_id);
       if (!profile) return null;
+      const teamData = extractTeamData(profile);
       return {
         id: `incoming-${s.from_profile_id}`,
         type: 'INCOMING',
         profile,
         matched_at: s.created_at,
+        teamName: teamData?.name,
+        teamId: teamData?.id,
+        teammates: teamData?.teammates || []
       };
     })
     .filter(Boolean);

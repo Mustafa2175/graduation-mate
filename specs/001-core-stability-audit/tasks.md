@@ -42,9 +42,9 @@
 **Assignment**: **Developer B**
 **Dependencies**: None. Can run in parallel with US1, US3, and US4.
 
-- [ ] T012 [P] [US2] Update `getConnections` query in `lib/queries/matches.ts` to include relation joins for team data
-- [ ] T013 [P] [US2] Define type interfaces for the new batched connection response in `lib/queries/matches.ts`
-- [ ] T014 [US2] Refactor `app/matches/page.tsx` to remove the N+1 `getTeamById` calls and use the batched data directly
+- [x] T012 [P] [US2] Update `getConnections` query in `lib/queries/matches.ts` to include relation joins for team data
+- [x] T013 [P] [US2] Define type interfaces for the new batched connection response in `lib/queries/matches.ts`
+- [x] T014 [US2] Refactor `app/matches/page.tsx` to remove the N+1 `getTeamById` calls and use the batched data directly
 
 ---
 
