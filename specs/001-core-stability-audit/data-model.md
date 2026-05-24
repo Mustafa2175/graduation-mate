@@ -6,8 +6,8 @@
 The `profiles` table stores the core user data (name, university info, bio).
 
 **Changes**:
-- **REMOVE COLUMN**: `team_id` (migration). The dual source of truth is eliminated.
-- **POLICY UPDATE**: The `SELECT` policy will be restricted to prevent unauthenticated/unauthorized bulk harvesting (DB-01).
+- **DENORMALIZED COLUMN**: `team_id` is KEPT as a denormalized convenience column (migration 017). It must be strictly maintained in sync via application code inside `lib/queries/teams.ts` instead of using database triggers.
+- **POLICY UPDATE**: The `SELECT` policy is restricted to prevent unauthenticated/unauthorized bulk harvesting (DB-01).
 
 ### 2. `team_members`
 The `team_members` table stores the relationship between a user (`profile_id`) and a team (`team_id`).

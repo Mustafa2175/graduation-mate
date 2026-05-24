@@ -63,3 +63,18 @@
 **Rationale**: `resetSwipes` is a destructive action designed for development and testing. Exposing the UI button in production leads to unhandled errors (since the server action/query throws an error). It must be hidden from real users.
 **Alternatives considered**:
 - Remove the button entirely: Not ideal, as it's useful for developers testing the swipe mechanics without needing to manually clear DB tables.
+
+## 10. Denormalized profiles.team_id Alignment
+
+**Decision**: Maintain `profiles.team_id` as a denormalized convenience column updated exclusively through application-level mutations (`createTeam`, `joinTeam`, `leaveTeam` in `lib/queries/teams.ts`), without relying on database triggers.
+**Rationale**: Dropping `profiles.team_id` completely would force complex and performance-costly nested joins/subqueries in reads throughout the application (such as in discover filtering, profile edit page, and discover cards). However, to avoid dual source-of-truth errors, all mutations that alter team membership must strictly keep `profiles.team_id` and `team_members` in perfect sync. Application-level synchronization keeps database complexity low (no triggers or SQL function maintenance) while preserving fast reads.
+**Alternatives considered**:
+- PostgreSQL Triggers: Rejected to maintain a simpler, more portable database schema. 
+- Fully Normalize (drop column): Rejected due to read performance regressions on high-frequency pages (like Discover profiles queries).
+
+## 11. Type Safety in my-team/page.tsx
+
+**Decision**: Replace `any` typings for `team` and `teammates` in `app/my-team/page.tsx` with proper, centralized `Team` and `Profile` interfaces imported from `@/types`.
+**Rationale**: Eliminating loose `any` types prevents silent runtime regression risks during future refactors or updates to the profiles or teams schema. Explicit typings leverage the full power of TypeScript compiling, ensuring autocomplete and type checking work seamlessly.
+**Alternatives considered**:
+- Inline typings: Declaring types inside the page component increases duplication. Importing from the centralized `@/types` folder is cleaner and adheres to the project's codebase patterns.

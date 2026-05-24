@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase/client'
+import { Team, Profile } from '@/types'
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -111,29 +112,29 @@ export async function leaveTeam(teamId: string, profileId: string) {
   }
 }
 
-export async function getTeamMembers(teamId: string) {
+export async function getTeamMembers(teamId: string): Promise<Profile[]> {
   const { data } = await supabase
     .from('team_members')
     .select('profiles(*)')
     .eq('team_id', teamId)
-  return data?.map((d: any) => d.profiles) || []
+  return (data?.map((d: any) => d.profiles) || []) as Profile[]
 }
 
-export async function getTeamById(teamId: string) {
+export async function getTeamById(teamId: string): Promise<Team | null> {
   const { data } = await supabase
     .from('teams')
     .select('*')
     .eq('id', teamId)
     .single()
-  return data
+  return data as Team | null
 }
 
-export async function updateTeamDetails(teamId: string, updates: any) {
+export async function updateTeamDetails(teamId: string, updates: Partial<Team>) {
   const { data, error } = await supabase
     .from('teams')
     .update(updates)
     .eq('id', teamId)
     .select()
     .single()
-  return { data, error }
+  return { data: data as Team | null, error }
 }

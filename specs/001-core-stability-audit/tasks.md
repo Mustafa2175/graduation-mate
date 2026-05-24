@@ -104,3 +104,19 @@ Once Phase 1 is merged, the team splits the remaining 4 user stories completely 
 ### 3. Integration & Merge
 - The scopes of these 4 user stories are cleanly separated by file and concern.
 - **Minor overlap warning**: Developer A and Developer B both touch `app/matches/page.tsx`. Developer A replaces `useCurrentUser` while Developer B replaces the query logic. Git will easily auto-merge these changes as they are in different parts of the file, but they should quickly communicate when opening their PRs.
+
+---
+
+## 🔒 Phase 7: Deployment Blockers (Beta Readiness)
+**Goal**: Resolve the final two deployment blockers to make the application fully ready for a real student beta.
+
+- [x] T030 Add Next.js Middleware / Verifying `proxy.ts` Edge-level Auth Guard
+- [x] T031 Gate `resetSwipes` UI under `process.env.NODE_ENV === 'development'`
+
+---
+
+## 🤝 Phase 8: Team Membership Integrity & My-Team Type Safety
+**Goal**: Align application code with the denormalized `profiles.team_id` architecture and upgrade type safety on the My Team dashboard.
+
+- [ ] T032 Verify/Ensure `profiles.team_id` synchronization in `lib/queries/teams.ts` (createTeam, joinTeam, leaveTeam)
+- [ ] T033 Upgrade Type Safety in `app/my-team/page.tsx` (replace `any` typings with `Team` and `Profile`)

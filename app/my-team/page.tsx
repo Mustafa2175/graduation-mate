@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { getProfileById } from "@/lib/queries/profiles";
+import { Team, Profile } from "@/types";
 import {
   getTeamById,
   getTeamMembers,
@@ -34,8 +35,8 @@ export default function MyTeamPage() {
 
   // Loading & State
   const [isLoading, setIsLoading] = useState(true);
-  const [team, setTeam] = useState<any>(null);
-  const [teammates, setTeammates] = useState<any[]>([]);
+  const [team, setTeam] = useState<Team | null>(null);
+  const [teammates, setTeammates] = useState<Profile[]>([]);
 
   // Invitation Copy Feedback
   const [copied, setCopied] = useState(false);
@@ -64,35 +65,42 @@ export default function MyTeamPage() {
 
         setTeam(teamData);
         setTeammates(members || []);
-        setTeamName(teamData?.name || "");
+        if (teamData) {
+          setTeamName(teamData.name || "");
 
-        // Prefer the new normalized columns; fall back to JSON parsing of
-        // looking_for_role for teams created before migration 008.
-        const hasNewCols =
-          teamData.project_description ||
-          (teamData.project_technologies &&
-            teamData.project_technologies.length > 0) ||
-          (teamData.roles_needed && teamData.roles_needed.length > 0);
+          // Prefer the new normalized columns; fall back to JSON parsing of
+          // looking_for_role for teams created before migration 008.
+          const hasNewCols =
+            teamData.project_description ||
+            (teamData.project_technologies &&
+              teamData.project_technologies.length > 0) ||
+            (teamData.roles_needed && teamData.roles_needed.length > 0);
 
-        if (hasNewCols) {
-          setProjectDescription(teamData.project_description || "");
-          setProjectTechnologies(
-            (teamData.project_technologies || []).join(", "),
-          );
-          setRolesNeeded((teamData.roles_needed || []).join(", "));
-        } else if (teamData?.looking_for_role) {
-          try {
-            const parsed = JSON.parse(teamData.looking_for_role);
-            setProjectDescription(parsed.description || "");
-            setProjectTechnologies(parsed.technologies || "");
-            setRolesNeeded(parsed.rolesNeeded || "");
-          } catch (e) {
-            // Fallback: plain-text value — show it as the roles field
-            setRolesNeeded(teamData.looking_for_role);
+          if (hasNewCols) {
+            setProjectDescription(teamData.project_description || "");
+            setProjectTechnologies(
+              (teamData.project_technologies || []).join(", "),
+            );
+            setRolesNeeded((teamData.roles_needed || []).join(", "));
+          } else if (teamData.looking_for_role) {
+            try {
+              const parsed = JSON.parse(teamData.looking_for_role);
+              setProjectDescription(parsed.description || "");
+              setProjectTechnologies(parsed.technologies || "");
+              setRolesNeeded(parsed.rolesNeeded || "");
+            } catch (e) {
+              // Fallback: plain-text value — show it as the roles field
+              setRolesNeeded(teamData.looking_for_role);
+              setProjectDescription("");
+              setProjectTechnologies("");
+            }
+          } else {
             setProjectDescription("");
             setProjectTechnologies("");
+            setRolesNeeded("");
           }
         } else {
+          setTeamName("");
           setProjectDescription("");
           setProjectTechnologies("");
           setRolesNeeded("");
@@ -135,6 +143,7 @@ export default function MyTeamPage() {
   const handleSaveTeamDetails = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!team?.id) return;
+    const teamId = team.id;
 
     setIsSavingDetails(true);
     setSaveSuccess(false);
@@ -155,7 +164,7 @@ export default function MyTeamPage() {
             .filter(Boolean)
         : [];
 
-      const { error } = await updateTeamDetails(team.id, {
+      const { error } = await updateTeamDetails(teamId, {
         name: teamName,
         project_description: projectDescription || null,
         project_technologies: techArray.length > 0 ? techArray : null,
@@ -166,7 +175,7 @@ export default function MyTeamPage() {
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);
         // Refresh local data
-        const updatedTeam = await getTeamById(team.id);
+        const updatedTeam = await getTeamById(teamId);
         setTeam(updatedTeam);
       }
     } catch (err: any) {
@@ -178,9 +187,10 @@ export default function MyTeamPage() {
 
   const handleLeaveTeam = async () => {
     if (!team?.id || !currentUserId) return;
+    const teamId = team.id;
     try {
       setIsLoading(true);
-      await leaveTeam(team.id, currentUserId);
+      await leaveTeam(teamId, currentUserId);
       setConfirmLeave(false);
       // Re-load to show empty state
       await loadTeamData(currentUserId);

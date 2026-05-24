@@ -90,3 +90,19 @@ supabase/
 - Modify `app/discover/page.tsx` to conditionally render the "Reset Queue & Swipe Again" button.
 - Condition: `process.env.NODE_ENV === 'development'`.
 - Ensure it does not break the empty state layout.
+
+## Phase 8: Team Membership Integrity & My-Team Type Safety
+
+**Goal**: Align application code with the denormalized `profiles.team_id` architecture and upgrade type safety on the My Team dashboard.
+
+### T032: Verify/Ensure `profiles.team_id` Synchronization
+- Audit `createTeam`, `joinTeam`, and `leaveTeam` inside `lib/queries/teams.ts` to confirm they strictly update `profiles.team_id` alongside `team_members` inserts/deletes.
+- Ensure proper sequential executions and error bubble-ups.
+- Document this application-level synchronization design in inline comments.
+
+### T033: Upgrade Type Safety in my-team/page.tsx
+- Import `Team` and `Profile` interfaces from `@/types`.
+- Replace `useState<any>(null)` for `team` with `useState<Team | null>(null)`.
+- Replace `useState<any[]>([]);` for `teammates` with `useState<Profile[]>([]);`.
+- Resolve all compiler checks and TypeScript warnings resulting from strict typings.
+- Remove loose typing and type-casting within `app/my-team/page.tsx`.

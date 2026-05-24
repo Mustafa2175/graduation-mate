@@ -30,7 +30,7 @@ describe('useSwipe hook', () => {
         { id: 'profile-2', full_name: 'Profile 2', created_at: '2023-01-02T00:00:00Z' }
       ] as any,
       error: null
-    })
+    } as any)
     vi.mocked(swipesQueries.insertSwipe).mockResolvedValue({ data: null, error: null } as any)
     vi.mocked(swipesQueries.checkMutualMatch).mockResolvedValue(false)
     vi.mocked(matchesQueries.createMatch).mockResolvedValue({ data: null, error: null } as any)
