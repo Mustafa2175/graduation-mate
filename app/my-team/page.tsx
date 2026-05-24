@@ -1,55 +1,32 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { getProfileById } from "@/lib/queries/profiles";
-import {
-  getTeamById,
-  getTeamMembers,
-  leaveTeam,
-  updateTeamDetails,
-} from "@/lib/queries/teams";
+import { getTeamById, getTeamMembers, leaveTeam, updateTeamDetails } from "@/lib/queries/teams";
 import { getInitials, getTrackBadge, getAvatarBg, cn } from "@/lib/utils";
-import {
-  Users,
-  Sparkles,
-  Compass,
-  ClipboardCheck,
-  Copy,
-  Briefcase,
-  Check,
-  AlertCircle,
-  ArrowRight,
-} from "lucide-react";
+import { Compass, ClipboardCheck, Copy, Check, AlertCircle } from "lucide-react";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import SkillBadge from "@/components/profile/SkillBadge";
 
-
 export default function MyTeamPage() {
   const router = useRouter();
   const { getFreshUser } = useAuth();
-  const [currentUserId, setCurrentUserId] = useState<string>("");
-
-  // Loading & State
+  const [currentUserId, setCurrentUserId] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [team, setTeam] = useState<any>(null);
   const [teammates, setTeammates] = useState<any[]>([]);
-
-  // Invitation Copy Feedback
   const [copied, setCopied] = useState(false);
-
-  // Form Details (Project & Recruitment) - Optional
   const [teamName, setTeamName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
   const [projectTechnologies, setProjectTechnologies] = useState("");
   const [rolesNeeded, setRolesNeeded] = useState("");
   const [isSavingDetails, setIsSavingDetails] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-
-  // Confirm Leave State
   const [confirmLeave, setConfirmLeave] = useState(false);
 
   const loadTeamData = async (profileId: string) => {
@@ -58,24 +35,18 @@ export default function MyTeamPage() {
       if (profile && profile.team_id) {
         const teamData = await getTeamById(profile.team_id);
         const members = await getTeamMembers(profile.team_id);
-
         setTeam(teamData);
         setTeammates(members || []);
         setTeamName(teamData?.name || "");
 
-        // Prefer the new normalized columns; fall back to JSON parsing of
-        // looking_for_role for teams created before migration 008.
         const hasNewCols =
           teamData.project_description ||
-          (teamData.project_technologies &&
-            teamData.project_technologies.length > 0) ||
+          (teamData.project_technologies && teamData.project_technologies.length > 0) ||
           (teamData.roles_needed && teamData.roles_needed.length > 0);
 
         if (hasNewCols) {
           setProjectDescription(teamData.project_description || "");
-          setProjectTechnologies(
-            (teamData.project_technologies || []).join(", "),
-          );
+          setProjectTechnologies((teamData.project_technologies || []).join(", "));
           setRolesNeeded((teamData.roles_needed || []).join(", "));
         } else if (teamData?.looking_for_role) {
           try {
@@ -83,8 +54,7 @@ export default function MyTeamPage() {
             setProjectDescription(parsed.description || "");
             setProjectTechnologies(parsed.technologies || "");
             setRolesNeeded(parsed.rolesNeeded || "");
-          } catch (e) {
-            // Fallback: plain-text value — show it as the roles field
+          } catch {
             setRolesNeeded(teamData.looking_for_role);
             setProjectDescription("");
             setProjectTechnologies("");
@@ -98,8 +68,6 @@ export default function MyTeamPage() {
         setTeam(null);
         setTeammates([]);
       }
-    } catch (err) {
-      // Silently catch error loading team dashboard data
     } finally {
       setIsLoading(false);
     }
@@ -116,7 +84,6 @@ export default function MyTeamPage() {
       setCurrentUserId(user.profileId);
       loadTeamData(user.profileId);
     };
-
     hydrateUser();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -127,45 +94,26 @@ export default function MyTeamPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSaveTeamDetails = async (e: React.FormEvent) => {
+  const handleSaveTeamDetails = async (e: FormEvent) => {
     e.preventDefault();
     if (!team?.id) return;
-
     setIsSavingDetails(true);
     setSaveSuccess(false);
 
     try {
-      // Write to the new normalized columns (migration 008).
-      // Split comma-separated UI strings into proper arrays for storage.
-      const techArray = projectTechnologies
-        ? projectTechnologies
-            .split(",")
-            .map((t: string) => t.trim())
-            .filter(Boolean)
-        : [];
-      const rolesArray = rolesNeeded
-        ? rolesNeeded
-            .split(",")
-            .map((r: string) => r.trim())
-            .filter(Boolean)
-        : [];
-
+      const techArray = projectTechnologies.split(",").map((t) => t.trim()).filter(Boolean);
+      const rolesArray = rolesNeeded.split(",").map((r) => r.trim()).filter(Boolean);
       const { error } = await updateTeamDetails(team.id, {
         name: teamName,
         project_description: projectDescription || null,
         project_technologies: techArray.length > 0 ? techArray : null,
         roles_needed: rolesArray.length > 0 ? rolesArray : null,
       });
-
       if (!error) {
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);
-        // Refresh local data
-        const updatedTeam = await getTeamById(team.id);
-        setTeam(updatedTeam);
+        setTeam(await getTeamById(team.id));
       }
-    } catch (err) {
-      // Silently catch error updating team optional details
     } finally {
       setIsSavingDetails(false);
     }
@@ -177,82 +125,45 @@ export default function MyTeamPage() {
       setIsLoading(true);
       await leaveTeam(team.id, currentUserId);
       setConfirmLeave(false);
-      // Re-load to show empty state
       await loadTeamData(currentUserId);
-    } catch (err) {
-      // Silently catch error leaving graduation team
+    } catch {
       setIsLoading(false);
     }
   };
 
   if (isLoading) {
     return (
-      <div className="p-6 h-[calc(100vh-80px)] overflow-y-auto space-y-6 ">
-        <div className="space-y-2">
-          <div className="w-48 h-8 bg-gray-200 rounded-lg" />
-          <div className="w-64 h-4 bg-gray-200 rounded" />
-        </div>
-        <div className="bg-gray-100 rounded-3xl h-60 w-full" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-gray-100 rounded-3xl h-80" />
-          <div className="bg-gray-100 rounded-3xl h-80" />
+      <div className="gm-page space-y-6">
+        <div className="gm-skeleton h-12 w-64" />
+        <div className="gm-skeleton h-60 w-full" />
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="gm-skeleton h-80" />
+          <div className="gm-skeleton h-80" />
         </div>
       </div>
     );
   }
 
-  // State A: Not in a Team
   if (!team) {
     return (
-      <div className="p-6 h-[calc(100vh-80px)] overflow-y-auto flex flex-col justify-center items-center">
-        <div className="w-full max-w-lg bg-white/80 backdrop-blur-2xl rounded-3xl border border-white/60 p-8 text-center shadow-sm flex flex-col items-center space-y-6 relative overflow-hidden">
-          {/* Decorative subtle ambient gradient glows */}
-          <div className="absolute top-0 right-0 w-28 h-28 bg-dark-carbon/5 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-36 h-36 bg-dark-carbon/5 rounded-full blur-2xl pointer-events-none" />
-
-          <div className="w-24 h-24 rounded-full bg-slate flex items-center justify-center text-5xl relative ">
-            👥
-            <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-dark-carbon text-absolute-zero text-[10px] font-black flex items-center justify-center ">
-              ✨
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-              You don't have a team yet
-            </h1>
-            <p className="text-sm text-gray-500 leading-relaxed max-w-sm mx-auto">
-              Graduation Mate works best when collaborating! Swipe on
-              classmates, form matches, and create or join a team to coordinate
-              your graduation project.
+      <div className="gm-page flex items-center justify-center bg-basalt-canvas">
+        <div className="flex w-full max-w-lg flex-col items-center space-y-6 p-8 text-center bg-ash-white border-4 border-abyssal-ink rounded-[40px] shadow-[6px_6px_0px_0px_rgba(7,6,7,1)] animate-reveal">
+          <div>
+            <p className="gm-kicker">Workspace Mode</p>
+            <h1 className="mt-2 text-4xl font-display uppercase tracking-wider text-abyssal-ink leading-none">No active workspace</h1>
+            <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-abyssal-ink font-semibold opacity-85">
+              Discover trend options, save drafts to your vault, and configure custom team workspaces from your dashboard.
             </p>
           </div>
-
-          <div className="w-full pt-4 flex flex-col space-y-3">
+          <div className="w-full space-y-4">
             <Link href="/discover" className="block w-full">
-              <Button className="w-full flex items-center justify-center gap-2 font-bold shadow-md shadow-dark-carbon/10">
-                <Compass className="w-4 h-4" /> Find Classmates (Discover)
+              <Button className="gm-btn gm-btn-primary w-full gap-2 rounded-[32px] cursor-pointer shadow-[3px_3px_0px_0px_rgba(7,6,7,1)] active:translate-y-[1px] active:shadow-none">
+                <Compass className="h-4 w-4 stroke-[3]" /> Discover Trends
               </Button>
             </Link>
-
             <Link href="/profile/edit" className="block w-full">
-              <Button
-                variant="secondary"
-                className="w-full flex items-center justify-center gap-2 border-gray-200 text-gray-700 font-semibold"
-              >
-                {/* Custom UserCheck icon SVG */}
-                <svg
-                  className="w-4 h-4 stroke-current fill-none"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <polyline points="16 11 18 13 22 9" />
-                </svg>
-                Create or Join Team via Profile
+              <Button variant="secondary" className="gm-btn gm-btn-secondary w-full rounded-[32px] cursor-pointer shadow-[3px_3px_0px_0px_rgba(7,6,7,1)] active:translate-y-[1px] active:shadow-none">
+                Brand Dashboard
               </Button>
             </Link>
           </div>
@@ -261,349 +172,108 @@ export default function MyTeamPage() {
     );
   }
 
-  // State B: In a Team
   return (
-    <div className="p-6 h-[calc(100vh-80px)] overflow-y-auto space-y-8 pb-14">
-      {/* Header Dashboard Banner */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="gm-page space-y-8 bg-basalt-canvas">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <div className="flex items-center gap-2">
-            <Badge color="orange">👥 Graduation Team</Badge>
-            <span className="text-[10px] font-bold text-gray-400">
-              Created {new Date(team.created_at).toLocaleDateString()}
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge color="border-2 border-abyssal-ink text-pure-white bg-cyber-violet rounded-[90px] font-bold">GenieStudio Workspace</Badge>
+            <span className="font-mono text-xs text-abyssal-ink font-bold">
+              Initialized {new Date(team.created_at).toLocaleDateString()}
             </span>
           </div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight mt-1">
-            {team.name}
-          </h1>
+          <h1 className="mt-2 text-5xl font-display uppercase tracking-wider text-abyssal-ink leading-none">{team.name}</h1>
         </div>
 
-        {/* Copy Invitation Token */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-3 shadow-sm flex items-center justify-between gap-6 shrink-0">
-          <div className="text-left">
-            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
-              Invitation Token
-            </p>
-            <p className="text-xs font-mono font-bold text-gray-700 select-all tracking-tight max-w-[120px] truncate">
-              {team.id}
-            </p>
+        <div className="flex items-center justify-between gap-6 p-4 bg-ash-white border-4 border-abyssal-ink rounded-[24px] shadow-[4px_4px_0px_0px_rgba(7,6,7,1)]">
+          <div className="min-w-0">
+            <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-abyssal-ink font-bold">Workspace Access Token</p>
+            <p className="max-w-[12rem] truncate font-mono text-xs font-bold text-abyssal-ink">{team.id}</p>
           </div>
-          <button
-            onClick={handleCopyCode}
-            className={cn(
-              "p-2.5 rounded-xl border transition-all duration-200",
-              copied
-                ? "bg-emerald-50 border-emerald-100 text-emerald-600"
-                : "bg-gray-50 border-gray-100 text-gray-500 hover:bg-gray-100 hover:text-gray-700",
-            )}
-            title="Copy Invitation Code to invite classmates"
-          >
-            {copied ? (
-              <ClipboardCheck className="w-4 h-4" />
-            ) : (
-              <Copy className="w-4 h-4" />
-            )}
+          <button onClick={handleCopyCode} className="gm-btn gm-btn-secondary !min-h-10 !px-3 rounded-xl border-2 border-abyssal-ink hover:bg-basalt-canvas/40 cursor-pointer shadow-[2px_2px_0px_0px_rgba(7,6,7,1)] active:translate-y-[1px] active:shadow-none" title="Copy invitation code">
+            {copied ? <ClipboardCheck className="h-4 w-4 text-emerald-600 stroke-[3]" /> : <Copy className="h-4 w-4 text-abyssal-ink stroke-[2.5]" />}
           </button>
         </div>
       </div>
 
-      {/* Main Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Columns (2/3): Teammates Listing */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
-              👨‍🎓 Teammates{" "}
-              <span className="text-xs font-bold text-gray-400">
-                ({teammates.length} total)
-              </span>
-            </h2>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        <section className="lg:col-span-2">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-3xl font-display uppercase tracking-wider text-abyssal-ink">Workspace Members <span className="font-mono text-xs text-abyssal-ink/65 font-bold">({teammates.length})</span></h2>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {teammates.map((member) => {
               const isCurrentUser = member.id === currentUserId;
-
               return (
-                <div
-                  key={member.id}
-                  className={cn(
-                    "bg-white/60 backdrop-blur-xl rounded-2xl border p-4 shadow-sm relative overflow-hidden flex flex-col justify-between transition-all duration-200 hover:shadow-md",
-                    isCurrentUser
-                      ? "border-orange-200 bg-orange-50/5"
-                      : "border-gray-100",
-                  )}
-                >
-                  {isCurrentUser && (
-                    <div className="absolute top-0 right-0 bg-orange-100 text-orange-700 text-[8px] font-black px-2 py-0.5 rounded-bl-lg uppercase">
-                      You
-                    </div>
-                  )}
-
-                  <div className="space-y-4">
-                    {/* Header: Name, Track */}
-                    <div className="flex items-center gap-3">
-                      {member.avatar_url ? (
-                        <img
-                          src={member.avatar_url}
-                          alt={member.full_name}
-                          className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-100"
-                        />
-                      ) : (
-                        <div
-                          className={cn(
-                            "w-12 h-12 rounded-full flex items-center justify-center text-sm font-black text-white",
-                            getAvatarBg(member.full_name),
-                          )}
-                        >
-                          {getInitials(member.full_name)}
-                        </div>
-                      )}
-                      <div className="text-left">
-                        <h4 className="font-bold text-gray-900 text-sm">
-                          {member.full_name}
-                        </h4>
-                        <div className="mt-0.5">
-                          <Badge color={getTrackBadge(member.track).color}>
-                            {getTrackBadge(member.track).label}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Bio */}
-                    {member.bio && (
-                      <p className="text-xs text-gray-500 line-clamp-2 text-left leading-relaxed">
-                        {member.bio}
-                      </p>
-                    )}
-
-                    {/* Technical Skills */}
-                    {member.skills && member.skills.length > 0 && (
-                      <div className="flex flex-wrap gap-1 justify-start">
-                        {member.skills.slice(0, 4).map((skill: string) => (
-                          <SkillBadge key={skill} skill={skill} />
-                        ))}
-                        {member.skills.length > 4 && (
-                          <span className="text-[9px] text-gray-400 self-center font-bold">
-                            +{member.skills.length - 4} more
-                          </span>
-                        )}
+                <article key={member.id} className={cn("relative space-y-4 p-6 bg-ash-white border-4 border-abyssal-ink rounded-[40px] shadow-[4px_4px_0px_0px_rgba(7,6,7,1)] transition-all duration-150", isCurrentUser && "border-digital-orange")}>
+                  {isCurrentUser && <span className="absolute right-6 top-6 font-mono text-[10px] uppercase text-digital-orange font-bold bg-pixel-glare px-3 py-1 rounded-[90px] border-2 border-abyssal-ink shadow-[1px_1px_0px_0px_rgba(7,6,7,1)] animate-reveal">You</span>}
+                  <div className="flex items-center gap-3">
+                    {member.avatar_url ? (
+                      <img src={member.avatar_url} alt={member.full_name} className="h-12 w-12 rounded-[16px] border-4 border-abyssal-ink object-cover shadow-[2px_2px_0px_0px_rgba(7,6,7,1)]" />
+                    ) : (
+                      <div className={cn("flex h-12 w-12 items-center justify-center rounded-[16px] border-4 border-abyssal-ink text-sm font-bold text-white shadow-[2px_2px_0px_0px_rgba(7,6,7,1)] font-display", getAvatarBg(member.full_name))}>
+                        {getInitials(member.full_name)}
                       </div>
                     )}
-                  </div>
-
-                  {/* Footer Contact Vectors */}
-                  <div className="mt-4 pt-3 border-t border-gray-50 flex items-center justify-between gap-2">
-                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">
-                      Contacts:
-                    </span>
-                    <div className="flex items-center gap-1.5">
-                      {member.whatsapp_number && (
-                        <a
-                          href={`https://wa.me/${member.whatsapp_number.replace(/[^0-9]/g, "")}?text=Hey%20${encodeURIComponent(member.full_name)}!%20Connecting%20from%20Graduation%20Mate!`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
-                          title="WhatsApp direct chat"
-                        >
-                          <svg
-                            className="w-3.5 h-3.5 fill-current"
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.035-4.326l.4.237c1.724 1.025 3.738 1.566 5.794 1.568 5.79 0 10.496-4.702 10.5-10.493.002-2.802-1.086-5.437-3.064-7.419C17.737 1.588 15.101.5 12.01.5 6.218.5 1.516 5.203 1.513 11c-.001 2.062.54 4.074 1.567 5.799l.259.439-1.031 3.766 3.784-1.03zm12.385-6.55c-.27-.136-1.602-.79-1.85-.88-.25-.09-.43-.136-.61.136-.18.27-.69.88-.85 1.056-.15.18-.3.2-.57.064-.27-.136-1.138-.419-2.169-1.338-.802-.716-1.344-1.602-1.5-1.875-.157-.273-.017-.42.119-.556.12-.12.27-.315.4-.472.13-.158.18-.27.27-.45.09-.18.04-.34-.02-.473-.06-.136-.61-1.477-.83-2.015-.22-.53-.44-.45-.61-.46-.16-.01-.35-.01-.54-.01-.19 0-.5.07-.76.353-.26.284-1 .977-1 2.385s1.02 2.76 1.16 2.95c.14.19 2 3.05 4.85 4.276.68.29 1.21.467 1.63.6.69.22 1.32.19 1.81.116.55-.08 1.6-.656 1.83-1.288.225-.63.225-1.17.157-1.288-.07-.116-.25-.205-.52-.34z" />
-                          </svg>
-                        </a>
-                      )}
-                      {member.linkedin_url && (
-                        <a
-                          href={member.linkedin_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
-                          title="LinkedIn profile"
-                        >
-                          {/* Custom self-contained LinkedIn SVG icon */}
-                          <svg
-                            className="w-3.5 h-3.5 fill-current"
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
-                          </svg>
-                        </a>
-                      )}
+                    <div className="min-w-0">
+                      <h4 className="truncate text-base font-bold text-abyssal-ink font-display">{member.full_name}</h4>
+                      <Badge color="border-2 border-abyssal-ink text-abyssal-ink bg-basalt-canvas rounded-[90px] text-[10px] font-bold mt-1">{getTrackBadge(member.track).label}</Badge>
                     </div>
                   </div>
-                </div>
+                  {member.bio && <p className="line-clamp-2 text-xs leading-relaxed text-abyssal-ink/80 font-semibold">{member.bio}</p>}
+                  {member.skills && member.skills.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {member.skills.slice(0, 4).map((skill: string) => <SkillBadge key={skill} skill={skill} />)}
+                    </div>
+                  )}
+                </article>
               );
             })}
           </div>
-        </div>
+        </section>
 
-        {/* Right Column (1/3): Form & Optional Details */}
-        <div className="space-y-6">
-          <div className="bg-white/70 backdrop-blur-2xl border border-white/60 rounded-3xl p-6 shadow-sm text-left">
-            <h2 className="text-lg font-black text-gray-900 flex items-center gap-2 mb-4">
-              {/* Custom Settings Gear SVG Icon */}
-              <svg
-                className="w-5 h-5 stroke-current fill-none text-gray-400"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                viewBox="0 0 24 24"
-              >
-                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-              Team Details
-            </h2>
-
+        <aside className="space-y-6">
+          <section className="p-6 bg-ash-white border-4 border-abyssal-ink rounded-[40px] shadow-[4px_4px_0px_0px_rgba(7,6,7,1)]">
+            <h2 className="mb-4 text-2xl font-display uppercase tracking-wider text-abyssal-ink border-b-2 border-abyssal-ink pb-2">Workspace Config</h2>
             <form onSubmit={handleSaveTeamDetails} className="space-y-4">
-              {/* Team Name */}
-              <div>
-                <label className="block text-xs font-black text-gray-400 uppercase tracking-wider mb-1.5">
-                  Team/Project Title
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={teamName}
-                  onChange={(e) => setTeamName(e.target.value)}
-                  placeholder="e.g. MedLink Telemedicine"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-dark-carbon/20 focus:border-dark-carbon"
-                />
-              </div>
-
-              {/* Project Abstract / Description - Optional */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-black text-gray-400 uppercase tracking-wider">
-                    Project Abstract
-                  </label>
-                  <span className="text-[9px] font-bold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded border">
-                    Optional
-                  </span>
-                </div>
-                <textarea
-                  value={projectDescription}
-                  onChange={(e) => setProjectDescription(e.target.value)}
-                  placeholder="Describe your graduation project goal, problems being solved, or final features..."
-                  rows={4}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-dark-carbon/20 focus:border-dark-carbon resize-none"
-                />
-              </div>
-
-              {/* Tech Stack - Optional */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-black text-gray-400 uppercase tracking-wider">
-                    Preferred Technologies
-                  </label>
-                  <span className="text-[9px] font-bold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded border">
-                    Optional
-                  </span>
-                </div>
-                <input
-                  type="text"
-                  value={projectTechnologies}
-                  onChange={(e) => setProjectTechnologies(e.target.value)}
-                  placeholder="e.g. Next.js, PyTorch, Flutter, Node.js"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-dark-carbon/20 focus:border-dark-carbon"
-                />
-              </div>
-
-              {/* Roles / Recruitment - Optional */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-black text-gray-400 uppercase tracking-wider">
-                    Looking For Roles
-                  </label>
-                  <span className="text-[9px] font-bold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded border">
-                    Optional
-                  </span>
-                </div>
-                <input
-                  type="text"
-                  value={rolesNeeded}
-                  onChange={(e) => setRolesNeeded(e.target.value)}
-                  placeholder="e.g. Backend Developer, UI Designer"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-dark-carbon/20 focus:border-dark-carbon"
-                />
-              </div>
-
-              <div className="pt-2">
-                <Button
-                  type="submit"
-                  disabled={isSavingDetails}
-                  className="w-full flex items-center justify-center gap-2 font-bold"
-                >
-                  {isSavingDetails ? (
-                    <span className="flex items-center gap-2">Saving...</span>
-                  ) : saveSuccess ? (
-                    <span className="flex items-center gap-1.5">
-                      <Check className="w-4 h-4" /> Changes Persisted!
-                    </span>
-                  ) : (
-                    "Save Team Details"
-                  )}
-                </Button>
-              </div>
+              <label className="block space-y-1.5">
+                <span className="text-abyssal-ink font-bold text-[10px] tracking-wider uppercase">Brand Campaign Title</span>
+                <input value={teamName} onChange={(e) => setTeamName(e.target.value)} required className="gm-input bg-pure-white border-abyssal-ink text-abyssal-ink" />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-abyssal-ink font-bold text-[10px] tracking-wider uppercase">Campaign Abstract & Goals</span>
+                <textarea value={projectDescription} onChange={(e) => setProjectDescription(e.target.value)} rows={4} className="gm-input bg-pure-white border-abyssal-ink text-abyssal-ink min-h-28 resize-none rounded-[20px]" />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-abyssal-ink font-bold text-[10px] tracking-wider uppercase">Preferred Style Engines</span>
+                <input value={projectTechnologies} onChange={(e) => setProjectTechnologies(e.target.value)} className="gm-input bg-pure-white border-abyssal-ink text-abyssal-ink" placeholder="e.g. Clean Minimalist, Vibrant Pastel" />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-abyssal-ink font-bold text-[10px] tracking-wider uppercase">Target Capabilities</span>
+                <input value={rolesNeeded} onChange={(e) => setRolesNeeded(e.target.value)} className="gm-input bg-pure-white border-abyssal-ink text-abyssal-ink" placeholder="e.g. UI/UX Designer, Copywriter" />
+              </label>
+              <Button type="submit" disabled={isSavingDetails} className="gm-btn gm-btn-primary w-full rounded-[32px] cursor-pointer mt-2 shadow-[2px_2px_0px_0px_rgba(7,6,7,1)] active:translate-y-[1px] active:shadow-none">
+                {isSavingDetails ? "Saving..." : saveSuccess ? <span className="flex items-center justify-center gap-2"><Check className="h-4 w-4 stroke-[3]" /> Saved</span> : "Save configurations"}
+              </Button>
             </form>
-          </div>
+          </section>
 
-          {/* Leave Team Card */}
-          <div className="bg-red-50/5 border border-red-100 rounded-3xl p-5 text-left flex flex-col space-y-3">
-            <div>
-              <h3 className="font-bold text-red-900 text-sm">Danger Zone</h3>
-              <p className="text-xs text-gray-500 leading-normal mt-0.5">
-                Leaving the team will remove you from this group. If you are the
-                last member, the team will be deleted.
-              </p>
-            </div>
-
+          <section className="rounded-[40px] border-4 border-abyssal-ink bg-pixel-glare p-6 shadow-[4px_4px_0px_0px_rgba(7,6,7,1)]">
+            <h3 className="text-2xl font-display uppercase tracking-wider text-abyssal-ink">Danger Zone</h3>
+            <p className="mt-2 text-xs leading-relaxed text-abyssal-ink font-semibold">Leaving removes you from this group. If you are the last member, the workspace will be deactivated.</p>
             {confirmLeave ? (
-              <div className="flex flex-col space-y-2 pt-1.5">
-                <p className="text-[10px] font-black text-red-700 uppercase tracking-wider flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5" /> Are you absolutely
-                  sure?
-                </p>
+              <div className="mt-4 space-y-2">
+                <p className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase text-digital-orange"><AlertCircle className="h-4 w-4 animate-pulse stroke-[3]" /> Confirm leave</p>
                 <div className="flex gap-2">
-                  <button
-                    onClick={handleLeaveTeam}
-                    className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold text-xs py-2 px-3 rounded-xl transition-all"
-                  >
-                    Yes, Leave
-                  </button>
-                  <button
-                    onClick={() => setConfirmLeave(false)}
-                    className="flex-1 bg-white hover:bg-gray-50 text-gray-700 font-bold text-xs py-2 px-3 border border-gray-200 rounded-xl transition-all"
-                  >
-                    Cancel
-                  </button>
+                  <button onClick={handleLeaveTeam} className="gm-btn flex-1 bg-digital-orange border-2 border-abyssal-ink text-pure-white rounded-[32px] text-xs font-bold py-2.5 cursor-pointer shadow-[2px_2px_0px_0px_rgba(7,6,7,1)] active:translate-y-[1px] active:shadow-none">Leave</button>
+                  <button onClick={() => setConfirmLeave(false)} className="gm-btn gm-btn-secondary flex-1 rounded-[32px] text-xs font-bold border-2 border-abyssal-ink cursor-pointer shadow-[2px_2px_0px_0px_rgba(7,6,7,1)] active:translate-y-[1px] active:shadow-none">Cancel</button>
                 </div>
               </div>
             ) : (
-              <button
-                onClick={() => setConfirmLeave(true)}
-                className="w-full bg-white hover:bg-red-50 text-red-600 font-bold border border-red-200 text-xs py-2.5 rounded-2xl flex items-center justify-center gap-1.5 transition-all"
-              >
-                {/* Custom self-contained LogOut SVG Icon */}
-                <svg
-                  className="w-3.5 h-3.5 stroke-current fill-none"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                  <polyline points="16 17 21 12 16 7" />
-                  <line x1="21" x2="9" y1="12" y2="12" />
-                </svg>
-                Leave graduation team
-              </button>
+              <button onClick={() => setConfirmLeave(true)} className="gm-btn mt-4 w-full border-2 border-abyssal-ink bg-pure-white text-abyssal-ink rounded-[32px] text-xs font-bold py-2.5 hover:bg-basalt-canvas/40 cursor-pointer shadow-[2px_2px_0px_0px_rgba(7,6,7,1)] active:translate-y-[1px] active:shadow-none">Leave workspace</button>
             )}
-          </div>
-        </div>
+          </section>
+        </aside>
       </div>
     </div>
   );

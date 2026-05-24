@@ -36,15 +36,15 @@ const SwipeCard = forwardRef<any, SwipeCardProps>(
       swipeThreshold={80}
     >
       <div className="relative select-none cursor-grab active:cursor-grabbing">
-        {/* YES / SKIP labels */}
+        {/* SAVE TO VAULT / PASS labels */}
         {isTop && dragDir === 'RIGHT' && (
-          <div className="absolute top-4 left-4 z-20 bg-[var(--color-brand)] text-white shadow-lg rounded-full px-4 py-1.5 pointer-events-none animate-in zoom-in duration-200">
-            <span className="font-bold text-xs tracking-widest uppercase">Team Fit</span>
+          <div className="absolute top-6 left-6 z-20 bg-digital-orange text-pure-white shadow-[3px_3px_0px_0px_rgba(7,6,7,1)] rounded-[90px] px-6 py-2.5 pointer-events-none animate-in zoom-in duration-200 border-4 border-abyssal-ink">
+            <span className="font-mono text-xs font-bold tracking-wider uppercase">SAVE TO VAULT</span>
           </div>
         )}
         {isTop && dragDir === 'LEFT' && (
-          <div className="absolute top-4 right-4 z-20 bg-neutral-800 text-white shadow-lg rounded-full px-4 py-1.5 pointer-events-none animate-in zoom-in duration-200">
-            <span className="font-bold text-xs tracking-widest uppercase">Pass</span>
+          <div className="absolute top-6 right-6 z-20 bg-cyber-violet text-pure-white shadow-[3px_3px_0px_0px_rgba(7,6,7,1)] rounded-[90px] px-6 py-2.5 pointer-events-none animate-in zoom-in duration-200 border-4 border-abyssal-ink">
+            <span className="font-mono text-xs font-bold tracking-wider uppercase">PASS</span>
           </div>
         )}
 

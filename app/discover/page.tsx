@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useSwipe } from "@/hooks/useSwipe";
@@ -47,15 +47,12 @@ export default function DiscoverPage() {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Infinite scroll trigger
   useEffect(() => {
-    // When 5 or fewer cards remain, pre-fetch the next batch
     if (currentIndex <= 4 && currentIndex >= 0 && hasMore && !isFetchingMore) {
       fetchMore();
     }
   }, [currentIndex, hasMore, isFetchingMore, fetchMore]);
 
-  // Filter profiles based on selected filters, and keep only those up to currentIndex
   const remainingFiltered = useMemo(() => {
     return profiles.filter((_, i) => i <= currentIndex);
   }, [profiles, currentIndex]);
@@ -70,7 +67,6 @@ export default function DiscoverPage() {
     const topIndex = remainingFiltered.length - 1;
     const ref = childRefs.current[topIndex];
     if (ref && ref.swipe) {
-      // This animates the card off screen and triggers the onSwipe callback
       await ref.swipe(dir);
     } else {
       handleSwipe(dir === "right" ? "RIGHT" : "LEFT", currentProfile);
@@ -79,12 +75,12 @@ export default function DiscoverPage() {
 
   if (!authChecked || isRedirecting || isLoading) {
     return (
-      <div className="flex flex-col h-[calc(100vh-80px)] p-6 ">
-        <div className="h-10 bg-gray-200 rounded-xl mb-6 w-full" />
-        <div className="flex-1 bg-gray-200 rounded-2xl mb-8" />
-        <div className="flex justify-center gap-8 mb-4">
-          <div className="w-16 h-16 bg-gray-200 rounded-full" />
-          <div className="w-16 h-16 bg-gray-200 rounded-full" />
+      <div className="gm-page flex flex-col">
+        <div className="gm-skeleton mb-6 h-10 w-full" />
+        <div className="gm-skeleton mb-8 flex-1" />
+        <div className="mb-4 flex justify-center gap-4">
+          <div className="gm-skeleton h-14 w-14 rounded-md" />
+          <div className="gm-skeleton h-14 w-14 rounded-md" />
         </div>
       </div>
     );
@@ -92,20 +88,17 @@ export default function DiscoverPage() {
 
   if (loadError) {
     return (
-      <div className="min-h-[calc(100vh-100px)] w-full bg-[#ededed] p-6 rounded-3xl border border-neutral-200/50 flex items-center justify-center font-sans">
-        <div className="bg-white rounded-3xl border border-red-100 p-8 text-center shadow-sm max-w-sm space-y-4">
-          <div className="text-4xl">⚠️</div>
-          <h2 className="font-semibold text-xl text-[#0b0f1a]">
+      <div className="gm-page flex items-center justify-center">
+        <div className="gm-panel max-w-sm space-y-4 p-8 text-center">
+          <h2 className="text-xl font-semibold text-ink">
             Discover could not load
           </h2>
-          <p className="text-sm text-neutral-500 leading-relaxed">
-            {loadError}
-          </p>
+          <p className="text-sm leading-relaxed text-ink-2">{loadError}</p>
           <button
             onClick={() => window.location.reload()}
-            className="inline-flex items-center justify-center rounded-full bg-[var(--color-brand)] px-6 py-3 text-xs font-bold text-white uppercase tracking-wider hover:bg-[var(--color-brand)]/95 transition-all"
+            className="gm-btn gm-btn-primary"
           >
-            Try Again
+            Try again
           </button>
         </div>
       </div>
@@ -113,54 +106,44 @@ export default function DiscoverPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-100px)] w-full bg-[#ededed] p-4 sm:p-6 rounded-3xl border border-neutral-200/50 flex flex-col justify-start relative overflow-hidden font-sans">
-      {/* Top Header & Badge */}
-      <div className="text-center mb-3 pt-1 shrink-0 flex flex-col items-center select-none">
-        <div className="inline-flex items-center gap-2 bg-white rounded-full px-4 py-1.5 shadow-sm text-[13px] border border-neutral-100">
-          <span className="w-2 h-2 rounded-full bg-[var(--color-brand)]" />
-          <span className="font-semibold text-neutral-800 tracking-wide text-[10px] uppercase font-sans">
-            TeamUp Network
-          </span>
+    <div className="gm-page flex flex-col justify-start overflow-hidden bg-basalt-canvas">
+      <div className="mb-6 shrink-0 select-none">
+        <div className="gm-badge bg-pixel-glare border-2 border-abyssal-ink shadow-[2px_2px_0px_0px_rgba(7,6,7,1)]">
+          <span className="gm-status-dot" />
+          <span>Trend Signals</span>
         </div>
-        <h1 className="font-sans font-semibold text-2xl sm:text-3xl text-[#0b0f1a] tracking-tight mt-2">
-          Find your ideal{" "}
-          <span className="font-instrument italic text-[1.15em] font-normal leading-none text-[var(--color-brand)]">
-            Teammates
-          </span>
+        <h1 className="mt-3 text-5xl font-display uppercase tracking-wider text-abyssal-ink leading-none">
+          Trend Intelligence Lab
         </h1>
+        <p className="mt-2 max-w-md text-sm leading-relaxed text-abyssal-ink font-semibold">
+          Swipe through AI-generated content concepts curated from real-time social signals. Save ideas directly to your Brand Vault.
+        </p>
       </div>
 
-      {/* Swipe Area */}
-      <div className="relative flex-1 w-full max-w-sm mx-auto min-h-[360px]">
+      <div className="relative mx-auto min-h-[360px] w-full max-w-sm flex-1">
         {remainingFiltered.length === 0 ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center space-y-6 bg-white/85 backdrop-blur-md rounded-3xl border border-neutral-200/50 p-8 shadow-sm animate-in fade-in duration-300">
-            <div className="w-20 h-20 bg-neutral-50 rounded-full flex items-center justify-center border border-neutral-100 ">
-              <span className="text-3xl text-[var(--color-brand)]">✨</span>
-            </div>
-            <div className="space-y-2">
-              <h3 className="font-semibold text-xl text-[#0b0f1a] tracking-tight">
-                You've seen everyone!
+          <div className="absolute inset-0 flex flex-col items-center justify-center space-y-6 p-8 text-center bg-ash-white border-4 border-abyssal-ink rounded-[40px] shadow-[6px_6px_0px_0px_rgba(7,6,7,1)] animate-reveal">
+            <div className="space-y-3">
+              <h3 className="text-3xl font-display tracking-wider uppercase leading-none text-abyssal-ink">
+                Trend queue complete
               </h3>
-              <p className="text-xs text-neutral-500 max-w-xs mx-auto leading-relaxed">
-                You have reached the end of the student list. To ensure your
-                queue is never empty, reset the queue below to start swiping all
-                users again!
+              <p className="mx-auto max-w-xs text-sm leading-relaxed text-abyssal-ink font-semibold opacity-85">
+                You reached the end of the visual content suggestion list. Refresh trend intelligence to parse active signals again.
               </p>
             </div>
             <button
               onClick={resetSwipeQueue}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-brand)] px-8 py-3 text-xs font-bold text-white uppercase tracking-wider hover:bg-[var(--color-brand)]/95 transition-all shadow-[0_4px_16px_rgba(8,113,231,0.2)] cursor-pointer"
+              className="gm-btn gm-btn-primary cursor-pointer shadow-[2px_2px_0px_0px_rgba(7,6,7,1)] active:translate-y-[1px] active:shadow-none"
             >
-              🔄 Reset Queue & Swipe Again
+              Refresh Trends
             </button>
           </div>
         ) : (
           <>
-            {/* Background skeleton when fetching more */}
             {isFetchingMore && (
-              <div className="absolute inset-0 z-[-1] p-4 bg-white/40 rounded-3xl animate-pulse shadow-sm border border-neutral-100 flex flex-col">
-                <div className="h-10 bg-neutral-200/50 rounded-xl mb-6 w-full" />
-                <div className="flex-1 bg-neutral-200/50 rounded-2xl mb-8" />
+              <div className="gm-card absolute inset-0 z-[-1] flex flex-col p-4">
+                <div className="gm-skeleton mb-6 h-10 w-full" />
+                <div className="gm-skeleton mb-8 flex-1" />
               </div>
             )}
             {remainingFiltered.map((profile, i) => {
@@ -171,7 +154,7 @@ export default function DiscoverPage() {
                   className="absolute inset-0 pointer-events-none"
                   style={{ zIndex: i }}
                 >
-                  <div className="pointer-events-auto w-full h-full">
+                  <div className="pointer-events-auto h-full w-full">
                     <SwipeCard
                       ref={(el) => {
                         childRefs.current[i] = el;
@@ -188,8 +171,7 @@ export default function DiscoverPage() {
         )}
       </div>
 
-      {/* Buttons */}
-      <div className="shrink-0 mt-6 mb-2">
+      <div className="mb-2 mt-6 shrink-0">
         <SwipeButtons
           onLeft={() => swipe("left")}
           onRight={() => swipe("right")}

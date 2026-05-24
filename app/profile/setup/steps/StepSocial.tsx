@@ -62,37 +62,34 @@ export default function StepSocial({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Avatar Section */}
-      <section className="light-glass rounded-3xl p-6 flex justify-center border border-black/5 shadow-sm">
+      <section className="bg-ash-white border-4 border-abyssal-ink rounded-[40px] p-6 flex justify-center shadow-[4px_4px_0px_0px_rgba(7,6,7,1)] animate-reveal">
         <div className="relative group">
           <AvatarUpload currentUrl={avatarPreview} onSelect={onAvatarSelect} />
         </div>
       </section>
 
       {/* Social Details */}
-      <section className="space-y-5 light-glass rounded-3xl p-6 border border-black/5 shadow-sm">
-        <h2
-          style={{ fontFamily: "'Instrument Serif', serif" }}
-          className="text-3xl font-normal text-black/90 tracking-wide border-b border-black/5 pb-2"
-        >
-          Socials & Contact
+      <section className="space-y-5 bg-ash-white border-4 border-abyssal-ink rounded-[40px] p-8 shadow-[4px_4px_0px_0px_rgba(7,6,7,1)] animate-reveal">
+        <h2 className="text-3xl font-display uppercase tracking-wider text-abyssal-ink border-b-2 border-abyssal-ink pb-3">
+          Brand Details & Contacts
         </h2>
 
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="bio"
-            className="text-black/75 font-semibold text-xs tracking-wider uppercase"
+            className="text-abyssal-ink font-bold text-xs tracking-wider uppercase"
           >
-            Bio
+            Brand Voice Description
           </label>
           <textarea
             id="bio"
             {...register("bio")}
             rows={3}
             maxLength={300}
-            placeholder="Tell teammates about yourself..."
-            className="w-full rounded-xl border border-black/10 bg-black/[0.02] px-4 py-3 text-sm text-black placeholder-black/30 resize-none focus:outline-none focus:ring-1 focus:ring-black transition-all"
+            placeholder="Describe your brand voice, content focus, and key messaging..."
+            className="w-full rounded-xl border border-abyssal-ink bg-pure-white px-4 py-3 text-sm text-abyssal-ink placeholder-ash-gray/60 resize-none focus:outline-none focus:ring-1 focus:ring-cyber-violet transition-all font-semibold"
           />
-          <p className="text-[10px] text-neutral-400 text-right">
+          <p className="text-[10px] text-abyssal-ink font-bold text-right mt-1">
             {bioText.length}/300
           </p>
           {errors.bio && (
@@ -102,21 +99,21 @@ export default function StepSocial({
 
         <Input
           id="linkedin_url"
-          label="LinkedIn URL (optional)"
+          label="Brand Website / LinkedIn URL (optional)"
           type="url"
-          placeholder="https://linkedin.com/in/..."
-          labelClassName="text-black/75 font-semibold text-xs tracking-wider uppercase"
-          className="bg-black/[0.02] border-black/10 text-black placeholder-black/30 focus:border-black/35 focus:ring-1 focus:ring-black focus:bg-white"
+          placeholder="https://geniestudio.app/..."
+          labelClassName="text-abyssal-ink font-bold text-xs tracking-wider uppercase"
+          className="bg-pure-white border-abyssal-ink text-abyssal-ink placeholder-ash-gray/60 focus:border-cyber-violet rounded-xl font-semibold"
           {...register("linkedin_url")}
           error={errors.linkedin_url?.message}
         />
 
         <Input
           id="whatsapp_number"
-          label="WhatsApp Number *"
+          label="Workspace Support WhatsApp *"
           placeholder="+201234567890"
-          labelClassName="text-black/75 font-semibold text-xs tracking-wider uppercase"
-          className="bg-black/[0.02] border-black/10 text-black placeholder-black/30 focus:border-black/35 focus:ring-1 focus:ring-black focus:bg-white"
+          labelClassName="text-abyssal-ink font-bold text-xs tracking-wider uppercase"
+          className="bg-pure-white border-abyssal-ink text-abyssal-ink placeholder-ash-gray/60 focus:border-cyber-violet rounded-xl font-semibold"
           {...register("whatsapp_number")}
           error={errors.whatsapp_number?.message}
         />
@@ -128,11 +125,16 @@ export default function StepSocial({
           variant="secondary"
           onClick={onBack}
           disabled={isSubmitting}
+          className="gm-btn gm-btn-secondary shadow-[3px_3px_0px_0px_rgba(7,6,7,1)] active:translate-y-[1px] active:shadow-none"
         >
           Back
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Creating Profile..." : "Begin Journey"}
+        <Button 
+          type="submit" 
+          disabled={isSubmitting}
+          className="gm-btn gm-btn-primary shadow-[3px_3px_0px_0px_rgba(7,6,7,1)] active:translate-y-[1px] active:shadow-none font-bold"
+        >
+          {isSubmitting ? "Creating Workspace..." : "Build Brand Vault"}
         </Button>
       </div>
     </form>

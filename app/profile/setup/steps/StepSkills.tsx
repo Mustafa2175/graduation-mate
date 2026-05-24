@@ -201,24 +201,24 @@ export default function StepSkills({ draft, onNext, onBack }: StepProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <section className="space-y-5 light-glass rounded-3xl p-6 border border-black/5 shadow-sm">
-        <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="text-3xl font-normal text-black/90 tracking-wide border-b border-black/5 pb-2">
-          Skills
+      <section className="space-y-5 bg-ash-white border-4 border-abyssal-ink rounded-[40px] p-8 shadow-[4px_4px_0px_0px_rgba(7,6,7,1)]">
+        <h2 className="text-3xl font-display uppercase tracking-wider text-abyssal-ink border-b-2 border-abyssal-ink pb-3">
+          Creator Style & Tags
         </h2>
 
         {/* Selected Skill Chips Display */}
         {skills.length > 0 && (
-          <div className="flex flex-wrap gap-2 pb-2">
+          <div className="flex flex-wrap gap-2.5 pb-2">
             {skills.map(skill => (
               <span
                 key={skill}
-                className="inline-flex items-center gap-1.5 rounded-full bg-black/5 border border-black/5 px-3.5 py-1 text-xs font-medium text-black"
+                className="inline-flex items-center gap-1.5 rounded-[90px] bg-pure-white border-2 border-abyssal-ink px-4 py-1.5 text-xs font-bold text-abyssal-ink shadow-[2px_2px_0px_0px_rgba(7,6,7,1)]"
               >
                 {skill}
                 <button
                   type="button"
                   onClick={() => removeSkill(skill)}
-                  className="text-black/40 hover:text-black ml-1 text-sm font-bold focus:outline-none"
+                  className="text-abyssal-ink/60 hover:text-digital-orange ml-1 text-sm font-bold focus:outline-none cursor-pointer"
                 >
                   ×
                 </button>
@@ -228,7 +228,7 @@ export default function StepSkills({ draft, onNext, onBack }: StepProps) {
         )}
         
         {/* Search Combobox input */}
-        <div className="relative flex flex-col gap-1.5 w-full">
+        <div className="relative flex flex-col gap-1.5 w-full font-semibold">
           <div className="flex gap-2">
             <div className="relative flex-1">
               <input
@@ -245,23 +245,23 @@ export default function StepSkills({ draft, onNext, onBack }: StepProps) {
                   setTimeout(() => setIsOpen(false), 200)
                 }}
                 onKeyDown={handleKeyDown}
-                placeholder="Search or type a custom skill (e.g. PyTorch)..."
-                className="w-full rounded-xl border border-black/10 bg-black/[0.02] px-4 py-3 text-sm text-black placeholder-black/30 focus:outline-none focus:ring-1 focus:ring-black transition-all"
+                placeholder="Search style assets or skills (e.g. Figma, Generative AI, Tailwind CSS)..."
+                className="w-full rounded-xl border-2 border-abyssal-ink bg-pure-white px-4 py-3 text-sm text-abyssal-ink placeholder-ash-gray/60 focus:outline-none focus:ring-1 focus:ring-cyber-violet transition-all"
                 autoComplete="off"
               />
               
               {isOpen && filteredSuggestions.length > 0 && (
-                <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border border-black/5 bg-white py-1 text-sm shadow-sm ring-1 ring-black/5 focus:outline-none">
+                <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border-2 border-abyssal-ink bg-pure-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-none">
                   {filteredSuggestions.map((option, index) => (
                     <li
                       key={option}
                       onMouseDown={() => addSkill(option)}
                       onMouseEnter={() => setHighlightedIndex(index)}
                       className={cn(
-                        "relative cursor-pointer select-none px-4 py-2.5 transition-colors text-black",
+                        "relative cursor-pointer select-none px-4 py-2.5 transition-colors text-abyssal-ink font-semibold",
                         highlightedIndex === index
-                          ? "bg-[var(--brand)] text-white font-semibold"
-                          : "hover:bg-neutral-50"
+                          ? "bg-digital-orange text-pure-white font-bold"
+                          : "hover:bg-basalt-canvas/40"
                       )}
                     >
                       {option}
@@ -274,7 +274,7 @@ export default function StepSkills({ draft, onNext, onBack }: StepProps) {
             <button
               type="button"
               onClick={() => addSkill(skillInput)}
-              className="rounded-xl bg-black text-white px-5 text-sm font-semibold hover:bg-neutral-800 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+              className="rounded-xl border-2 border-abyssal-ink bg-digital-orange text-pure-white px-5 text-sm font-bold hover:bg-abyssal-ink transition-colors focus:outline-none cursor-pointer shadow-[2px_2px_0px_0px_rgba(7,6,7,1)] active:translate-y-[1px] active:shadow-none"
             >
               Add
             </button>
@@ -284,15 +284,15 @@ export default function StepSkills({ draft, onNext, onBack }: StepProps) {
         
         {/* Dynamic Sugessted Skill Chips */}
         {visibleSuggestions.length > 0 && (
-          <div className="pt-2 border-t border-black/5">
-            <p className="text-[10px] text-black/40 mb-2.5 uppercase tracking-wider font-semibold">Suggested for {draft.track || "your profile"}</p>
-            <div className="flex flex-wrap gap-1.5">
+          <div className="pt-4 border-t-2 border-abyssal-ink">
+            <p className="text-[10px] text-abyssal-ink mb-3.5 uppercase tracking-wider font-bold">Suggested for {draft.track || "your profile"}</p>
+            <div className="flex flex-wrap gap-2">
               {visibleSuggestions.slice(0, 15).map(skill => (
                 <button
                   key={skill}
                   type="button"
                   onClick={() => addSkill(skill)}
-                  className="inline-flex items-center rounded-full border border-black/10 bg-black/[0.02] px-3.5 py-1.5 text-[11px] font-medium text-black/70 hover:bg-black/5 hover:text-black transition-colors focus:outline-none"
+                  className="inline-flex items-center rounded-[90px] border-2 border-abyssal-ink bg-pure-white px-3.5 py-1.5 text-[11px] font-bold text-abyssal-ink hover:bg-basalt-canvas/40 hover:text-digital-orange hover:border-digital-orange transition-colors focus:outline-none cursor-pointer shadow-[2px_2px_0px_0px_rgba(7,6,7,1)] active:translate-y-[1px] active:shadow-none"
                 >
                   + {skill}
                 </button>
@@ -301,13 +301,13 @@ export default function StepSkills({ draft, onNext, onBack }: StepProps) {
           </div>
         )}
       </section>
-
+ 
       <div className="flex justify-between pt-4">
-        <Button type="button" variant="secondary" onClick={onBack}>
+        <Button type="button" variant="secondary" onClick={onBack} className="gm-btn gm-btn-secondary shadow-[3px_3px_0px_0px_rgba(7,6,7,1)] active:translate-y-[1px] active:shadow-none">
           Back
         </Button>
-        <Button type="submit">
-          Continue to Team Preferences
+        <Button type="submit" className="gm-btn gm-btn-primary shadow-[3px_3px_0px_0px_rgba(7,6,7,1)] active:translate-y-[1px] active:shadow-none font-bold">
+          Continue to Collaboration
         </Button>
       </div>
     </form>

@@ -5,8 +5,9 @@ import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from '@/hooks/useAuth'
 
 export const metadata: Metadata = {
-  title: 'TeamUp — Find Your Graduation Project Teammates',
-  description: 'Swipe-based team matchmaking for university students. Find compatible teammates by specialization, skills, and work style.',
+  title: 'GenieStudio - AI Content Engineering Platform',
+  description:
+    'AI-powered creative platform for brands, creators, and teams to build cohesive, on-brand content.',
 }
 
 export default function RootLayout({
@@ -16,11 +17,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-atmospheric min-h-screen">
+      <body className="gm-shell min-h-screen">
         <AuthProvider>
-          <div className="w-full max-w-5xl mx-auto bg-white/70 backdrop-blur-2xl min-h-screen pb-20 relative border-x border-white/40">
-            {children}
-          </div>
+          <div className="gm-app-frame relative pb-20">{children}</div>
           <BottomNav />
           <Toaster position="top-center" />
         </AuthProvider>

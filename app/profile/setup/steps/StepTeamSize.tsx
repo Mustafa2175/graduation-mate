@@ -348,36 +348,33 @@ export default function StepTeamSize({ draft, onNext, onBack }: StepProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <section className="space-y-5 light-glass rounded-3xl p-6 border border-black/5 shadow-sm">
-        <h2
-          style={{ fontFamily: "'Instrument Serif', serif" }}
-          className="text-3xl font-normal text-black/90 tracking-wide border-b border-black/5 pb-2"
-        >
-          Team Preference
+      <section className="space-y-5 bg-ash-white border-4 border-abyssal-ink rounded-[40px] p-8 shadow-[4px_4px_0px_0px_rgba(7,6,7,1)]">
+        <h2 className="text-3xl font-display uppercase tracking-wider text-abyssal-ink border-b-2 border-abyssal-ink pb-3">
+          Workspace Preferences
         </h2>
 
         {/* Collaboration Status Cards */}
         <div className="flex flex-col gap-3">
-          <span className="text-black/75 font-semibold text-xs tracking-wider uppercase">
-            Collaboration Status *
+          <span className="text-abyssal-ink font-bold text-xs tracking-wider uppercase">
+            Collaboration Mode *
           </span>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
               {
                 id: "solo",
-                label: "Solo Student",
-                desc: "Looking to Join a Team",
+                label: "Independent Creator",
+                desc: "Looking to Collaborate",
                 icon: "👤",
               },
               {
                 id: "leader",
-                label: "Team Leader",
-                desc: "Looking for Members",
+                label: "Brand Director",
+                desc: "Building a Team",
                 icon: "👥",
               },
               {
                 id: "member",
-                label: "Team Member",
+                label: "Workspace Member",
                 desc: "Already in a Team",
                 icon: "🔐",
               },
@@ -390,23 +387,23 @@ export default function StepTeamSize({ draft, onNext, onBack }: StepProps) {
                   setErrors({});
                 }}
                 className={cn(
-                  "p-4 rounded-2xl border text-left transition-all cursor-pointer active:scale-[0.98] shadow-sm flex flex-col justify-between min-h-[110px]",
+                  "p-4 rounded-2xl border-4 text-left transition-all cursor-pointer flex flex-col justify-between min-h-[120px] font-semibold shadow-[4px_4px_0px_0px_rgba(7,6,7,1)] active:translate-y-[2px] active:shadow-none",
                   collaborationStatus === status.id
-                    ? "bg-black border-black text-white shadow-black/10"
-                    : "bg-black/[0.02] border-black/10 text-black hover:bg-black/5",
+                    ? "bg-digital-orange border-abyssal-ink text-pure-white"
+                    : "bg-pure-white border-abyssal-ink text-abyssal-ink hover:bg-basalt-canvas/40",
                 )}
               >
                 <div className="text-xl mb-1">{status.icon}</div>
                 <div>
-                  <div className="font-bold text-xs sm:text-sm">
+                  <div className="font-display text-lg tracking-wide uppercase leading-none">
                     {status.label}
                   </div>
                   <div
                     className={cn(
-                      "text-[10px] sm:text-[11px] leading-tight mt-0.5",
+                      "text-[10px] leading-tight mt-1 font-bold",
                       collaborationStatus === status.id
-                        ? "text-white/70"
-                        : "text-neutral-500",
+                        ? "text-pure-white/80"
+                        : "text-abyssal-ink/65",
                     )}
                   >
                     {status.desc}
@@ -422,11 +419,11 @@ export default function StepTeamSize({ draft, onNext, onBack }: StepProps) {
           <div className="space-y-4 pt-2 animate-fade-in">
             {/* Selected Chips */}
             {preferredRoles.length > 0 && (
-              <div className="flex flex-wrap gap-2 pb-1">
+              <div className="flex flex-wrap gap-2.5 pb-1">
                 {preferredRoles.map((role) => (
                   <span
                     key={role}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-black/5 border border-black/5 px-3.5 py-1 text-xs font-medium text-black animate-fade-in"
+                    className="inline-flex items-center gap-1.5 rounded-[90px] bg-pure-white border-2 border-abyssal-ink px-4 py-1.5 text-xs font-bold text-abyssal-ink shadow-[2px_2px_0px_0px_rgba(7,6,7,1)] animate-fade-in"
                   >
                     {role}
                     <button
@@ -436,7 +433,7 @@ export default function StepTeamSize({ draft, onNext, onBack }: StepProps) {
                           preferredRoles.filter((r) => r !== role),
                         )
                       }
-                      className="text-black/40 hover:text-black ml-1 text-sm font-bold focus:outline-none"
+                      className="text-abyssal-ink/60 hover:text-digital-orange ml-1 text-sm font-bold focus:outline-none cursor-pointer"
                     >
                       ×
                     </button>
@@ -448,9 +445,9 @@ export default function StepTeamSize({ draft, onNext, onBack }: StepProps) {
             <div className="relative flex flex-col gap-1.5 w-full">
               <label
                 htmlFor="preferred-roles-input"
-                className="text-black/75 font-semibold text-xs tracking-wider uppercase"
+                className="text-abyssal-ink font-bold text-xs tracking-wider uppercase"
               >
-                Preferred Roles (Optional)
+                Target Capabilities (Optional)
               </label>
               <div className="relative">
                 <input
@@ -468,22 +465,22 @@ export default function StepTeamSize({ draft, onNext, onBack }: StepProps) {
                   }}
                   onKeyDown={handleKeyDownSolo}
                   placeholder="Search and select roles you are interested in..."
-                  className="w-full rounded-xl border border-black/10 bg-black/[0.02] px-4 py-3 text-sm text-black placeholder-black/30 focus:outline-none focus:ring-1 focus:ring-black transition-all"
+                  className="w-full rounded-xl border border-abyssal-ink bg-pure-white px-4 py-3 text-sm text-abyssal-ink placeholder-ash-gray/60 focus:outline-none focus:ring-1 focus:ring-cyber-violet focus:bg-white transition-all font-semibold"
                   autoComplete="off"
                 />
 
                 {isOpenSolo && filteredSoloRoles.length > 0 && (
-                  <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border border-black/5 bg-white py-1 text-sm shadow-sm ring-1 ring-black/5 focus:outline-none">
+                  <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border border-rule bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-none">
                     {filteredSoloRoles.map((option, index) => (
                       <li
                         key={option}
                         onMouseDown={() => selectSoloRole(option)}
                         onMouseEnter={() => setHighlightedIndexSolo(index)}
                         className={cn(
-                          "relative cursor-pointer select-none px-4 py-2.5 transition-colors text-black",
+                          "relative cursor-pointer select-none px-4 py-2.5 transition-colors text-ink font-semibold",
                           highlightedIndexSolo === index
-                            ? "bg-[var(--brand)] text-white font-semibold"
-                            : "hover:bg-neutral-50",
+                            ? "bg-cyber-violet text-white font-bold"
+                            : "hover:bg-sky-wash/40",
                         )}
                       >
                         {option}
@@ -501,8 +498,8 @@ export default function StepTeamSize({ draft, onNext, onBack }: StepProps) {
           <div className="space-y-5 pt-2 animate-fade-in">
             {/* How many members do you need */}
             <div className="flex flex-col gap-2">
-              <span className="text-black/75 font-semibold text-xs tracking-wider uppercase">
-                How many members do you need? *
+              <span className="text-abyssal-ink font-bold text-xs tracking-wider uppercase">
+                Active Workspace Seats Needed *
               </span>
               <div className="grid grid-cols-5 gap-3">
                 {[1, 2, 3, 4, 5].map((size) => (
@@ -511,10 +508,10 @@ export default function StepTeamSize({ draft, onNext, onBack }: StepProps) {
                     type="button"
                     onClick={() => handleMembersNeededChange(size)}
                     className={cn(
-                      "py-3 rounded-xl text-md font-bold border transition-all cursor-pointer active:scale-95 shadow-sm flex items-center justify-center",
+                      "py-3 rounded-xl text-md font-bold border-4 transition-all cursor-pointer shadow-[3px_3px_0px_0px_rgba(7,6,7,1)] active:translate-y-[2px] active:shadow-none flex items-center justify-center",
                       membersNeeded === size
-                        ? "bg-[var(--brand)] border-[var(--brand)] text-white shadow-[var(--brand)]/20"
-                        : "bg-black/[0.02] border-black/10 text-black/70 hover:bg-black/5",
+                        ? "bg-digital-orange border-abyssal-ink text-pure-white"
+                        : "bg-pure-white border-abyssal-ink text-abyssal-ink hover:bg-basalt-canvas/40",
                     )}
                   >
                     {size}
@@ -548,21 +545,21 @@ export default function StepTeamSize({ draft, onNext, onBack }: StepProps) {
           <div className="space-y-4 pt-2 animate-fade-in">
             <Input
               id="team-invite-code"
-              label="Team Invite Code *"
+              label="Workspace Access Token *"
               value={teamInviteCode}
               onChange={(e) => {
                 setTeamInviteCode(e.target.value);
                 setErrors((prev) => ({ ...prev, teamInviteCode: "" }));
               }}
               placeholder="e.g. ABCD1234"
-              labelClassName="text-black/75 font-semibold text-xs tracking-wider uppercase"
-              className="bg-black/[0.02] border-black/10 text-black placeholder-black/30 focus:border-black/35 focus:ring-1 focus:ring-black focus:bg-white"
+              labelClassName="text-abyssal-ink font-bold text-xs tracking-wider uppercase"
+              className="bg-pure-white border-abyssal-ink text-abyssal-ink placeholder-ash-gray/60 focus:border-cyber-violet rounded-xl font-semibold"
               error={errors.teamInviteCode}
             />
 
             <SearchableRoleSelector
               id="my-role"
-              label="My Role *"
+              label="My Creator Role *"
               value={myRole}
               onChange={(val) => {
                 setMyRole(val);
@@ -576,10 +573,12 @@ export default function StepTeamSize({ draft, onNext, onBack }: StepProps) {
       </section>
 
       <div className="flex justify-between pt-4">
-        <Button type="button" variant="secondary" onClick={onBack}>
+        <Button type="button" variant="secondary" onClick={onBack} className="gm-btn gm-btn-secondary shadow-[3px_3px_0px_0px_rgba(7,6,7,1)] active:translate-y-[1px] active:shadow-none">
           Back
         </Button>
-        <Button type="submit">Continue to Socials</Button>
+        <Button type="submit" className="gm-btn gm-btn-primary shadow-[3px_3px_0px_0px_rgba(7,6,7,1)] active:translate-y-[1px] active:shadow-none">
+          Continue to Brand Assets
+        </Button>
       </div>
     </form>
   );

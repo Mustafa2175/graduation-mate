@@ -128,13 +128,13 @@ export default function StepTrack({ draft, onNext, onBack }: StepProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <section className="space-y-5 light-glass rounded-3xl p-6 border border-black/5 shadow-sm">
-        <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="text-3xl font-normal text-black/90 tracking-wide border-b border-black/5 pb-2">
-          Academic Track
+      <section className="space-y-5 bg-ash-white border-4 border-abyssal-ink rounded-[40px] p-8 shadow-[4px_4px_0px_0px_rgba(7,6,7,1)]">
+        <h2 className="text-3xl font-display uppercase tracking-wider text-abyssal-ink border-b-2 border-abyssal-ink pb-3">
+          Content Format Focus
         </h2>
         
         <div className="relative flex flex-col gap-1.5 w-full">
-          <label htmlFor="track-search" className="text-black/75 font-semibold text-xs tracking-wider uppercase">Track *</label>
+          <label htmlFor="track-search" className="text-abyssal-ink font-bold text-xs tracking-wider uppercase">Target Format Focus *</label>
           <div className="relative">
             <input
               id="track-search"
@@ -152,23 +152,23 @@ export default function StepTrack({ draft, onNext, onBack }: StepProps) {
                 setTimeout(() => setIsOpen(false), 200)
               }}
               onKeyDown={handleKeyDown}
-              placeholder="Search for your desired track (e.g. Data Science)"
-              className="w-full rounded-xl border border-black/10 bg-black/[0.02] px-4 py-3 text-sm text-black placeholder-black/30 focus:outline-none focus:ring-1 focus:ring-black transition-all"
+              placeholder="Search for format (e.g. Generative AI, UI/UX Design, Backend Development)"
+              className="w-full rounded-xl border border-abyssal-ink bg-pure-white px-4 py-3 text-sm text-abyssal-ink placeholder-ash-gray/60 focus:outline-none focus:ring-1 focus:ring-cyber-violet focus:bg-white transition-all font-semibold"
               autoComplete="off"
             />
             
             {isOpen && filteredOptions.length > 0 && (
-              <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border border-black/5 bg-white py-1 text-sm shadow-sm ring-1 ring-black/5 focus:outline-none">
+              <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border-2 border-abyssal-ink bg-pure-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-none">
                 {filteredOptions.map((option, index) => (
                   <li
                     key={option}
                     onMouseDown={() => selectOption(option)}
                     onMouseEnter={() => setHighlightedIndex(index)}
                     className={cn(
-                      "relative cursor-pointer select-none px-4 py-2.5 transition-colors text-black",
+                      "relative cursor-pointer select-none px-4 py-2.5 transition-colors text-abyssal-ink font-semibold",
                       highlightedIndex === index
-                        ? "bg-[var(--brand)] text-white font-semibold"
-                        : "hover:bg-neutral-50"
+                        ? "bg-digital-orange text-pure-white"
+                        : "hover:bg-basalt-canvas/40"
                     )}
                   >
                     {option}
@@ -180,12 +180,12 @@ export default function StepTrack({ draft, onNext, onBack }: StepProps) {
           {errors.track && <p className="text-red-500 text-xs mt-1">{errors.track.message}</p>}
         </div>
       </section>
-
+ 
       <div className="flex justify-between pt-4">
-        <Button type="button" variant="secondary" onClick={onBack}>
+        <Button type="button" variant="secondary" onClick={onBack} className="gm-btn gm-btn-secondary shadow-[3px_3px_0px_0px_rgba(7,6,7,1)] active:translate-y-[1px] active:shadow-none">
           Back
         </Button>
-        <Button type="submit">
+        <Button type="submit" className="gm-btn gm-btn-primary shadow-[3px_3px_0px_0px_rgba(7,6,7,1)] active:translate-y-[1px] active:shadow-none">
           Continue to Skills
         </Button>
       </div>

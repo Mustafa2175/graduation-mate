@@ -1,4 +1,3 @@
-// components/discover/SwipeButtons.tsx
 import { X, UserPlus } from "lucide-react";
 
 interface SwipeButtonsProps {
@@ -14,26 +13,24 @@ export default function SwipeButtons({
 }: SwipeButtonsProps) {
   return (
     <div className="flex items-center justify-center gap-6">
-      {/* Skip / Left */}
       <button
         type="button"
         onClick={onLeft}
         disabled={disabled}
-        className="w-16 h-16 rounded-full bg-white/70 backdrop-blur-xl border border-white/50 flex items-center justify-center text-[#0b0f1a] shadow-sm hover:bg-white hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+        className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-abyssal-ink bg-ash-white text-abyssal-ink transition-all shadow-[4px_4px_0px_0px_rgba(7,6,7,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_0px_rgba(7,6,7,1)] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
         aria-label="Skip"
       >
-        <X className="w-6 h-6 stroke-[2.5]" />
+        <X className="h-6 w-6 stroke-[3.5]" />
       </button>
 
-      {/* Like / Right */}
       <button
         type="button"
         onClick={onRight}
         disabled={disabled}
-        className="w-16 h-16 rounded-full bg-[var(--color-brand)] flex items-center justify-center text-white shadow-sm hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+        className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-abyssal-ink bg-digital-orange text-pure-white transition-all shadow-[4px_4px_0px_0px_rgba(7,6,7,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_0px_rgba(7,6,7,1)] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
         aria-label="Connect"
       >
-        <UserPlus className="w-6 h-6 stroke-[2.5]" />
+        <UserPlus className="h-6 w-6 stroke-[3.5]" />
       </button>
     </div>
   );

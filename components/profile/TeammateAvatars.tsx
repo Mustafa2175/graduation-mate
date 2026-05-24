@@ -41,13 +41,13 @@ export default function TeammateAvatars({ teamId }: TeammateAvatarsProps) {
   const extra = teammates.length - 3
 
   return (
-    <div className="flex items-center gap-1.5">
-      <span className="text-[11px] font-medium text-gray-400">Team</span>
-      <div className="flex -space-x-2">
+    <div className="flex items-center gap-2">
+      <span className="font-mono text-[10px] uppercase tracking-wider text-abyssal-ink font-bold">Team</span>
+      <div className="flex -space-x-1.5">
         {visible.map((t) => (
           <div
             key={t.id}
-            className="w-6 h-6 rounded-full ring-2 ring-white overflow-hidden flex items-center justify-center text-[9px] font-bold text-white"
+            className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full ring-2 ring-abyssal-ink text-[9px] font-bold text-pure-white"
             title={t.full_name}
           >
             {t.avatar_url ? (
@@ -60,7 +60,7 @@ export default function TeammateAvatars({ teamId }: TeammateAvatarsProps) {
           </div>
         ))}
         {extra > 0 && (
-          <div className="w-6 h-6 rounded-full ring-2 ring-white bg-gray-200 flex items-center justify-center text-[9px] font-bold text-gray-600">
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-pure-white text-[9px] font-bold text-abyssal-ink ring-2 ring-abyssal-ink">
             +{extra}
           </div>
         )}

@@ -9,7 +9,6 @@ import SkillBadge from "./SkillBadge";
 import TeammateAvatars from "./TeammateAvatars";
 import Badge from "@/components/ui/Badge";
 
-
 const COMMITMENT_LABELS: Record<string, string> = {
   LOW: "Low commitment",
   MEDIUM: "Medium commitment",
@@ -17,9 +16,9 @@ const COMMITMENT_LABELS: Record<string, string> = {
 };
 
 const COMMITMENT_COLORS: Record<string, string> = {
-  LOW: "bg-yellow-100 text-yellow-700",
-  MEDIUM: "bg-blue-100 text-blue-700",
-  HIGH: "bg-green-100 text-green-700",
+  LOW: "border-rule text-muted",
+  MEDIUM: "border-accent/50 text-accent",
+  HIGH: "border-success/50 text-success",
 };
 
 interface ProfileCardProps {
@@ -46,46 +45,53 @@ export default function ProfileCard({
   const teamStatusPill = () => {
     switch (profile.team_status) {
       case "LOOKING":
-        return (
-          <Badge color="bg-green-100 text-green-700">Looking for team</Badge>
-        );
+        return <Badge color="border-emerald-200 text-emerald-700 bg-emerald-50 rounded-[90px]">Concept: Available to Draft</Badge>;
       case "COMPLETE":
-        return <Badge color="bg-gray-100 text-gray-500">Team complete</Badge>;
+        return <Badge color="border-rule text-silver-pine bg-slate-50 rounded-[90px]">Concept Locked</Badge>;
       case "LOOKING_FOR_MORE":
         return (
-          <Badge color="bg-blue-100 text-blue-700">
-            Looking for: {profile.looking_for_role || "a teammate"}
+          <Badge color="border-electric-blue/30 text-electric-blue bg-blue-50 rounded-[90px]">
+            Needs Workspace: {profile.looking_for_role || "a collaborator"}
           </Badge>
         );
     }
   };
 
+  const COMMITMENT_LABELS_SAAS: Record<string, string> = {
+    LOW: "Speed campaign",
+    MEDIUM: "Balanced layout",
+    HIGH: "Pillar content",
+  };
+
+  const COMMITMENT_COLORS_SAAS: Record<string, string> = {
+    LOW: "border-rule text-silver-pine bg-slate-50 rounded-[90px]",
+    MEDIUM: "border-electric-blue/30 text-electric-blue bg-blue-50 rounded-[90px]",
+    HIGH: "border-emerald-200 text-emerald-700 bg-emerald-50 rounded-[90px]",
+  };
+
   return (
     <div
       className={cn(
-        'relative bg-white/90 backdrop-blur-2xl rounded-3xl border border-white/60 shadow-sm p-6 space-y-4 overflow-hidden transition-all h-full flex flex-col justify-between',
-        !profile.is_available && 'opacity-60'
+        "relative flex h-full flex-col justify-between space-y-6 overflow-hidden p-8 bg-ash-white border-4 border-abyssal-ink rounded-[40px] shadow-[4px_4px_0px_0px_rgba(7,6,7,1)] transition-all duration-150",
+        !profile.is_available && "opacity-60",
       )}
     >
-      {/* Unavailable overlay */}
       {!profile.is_available && (
-        <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] rounded-2xl z-10 pointer-events-none" />
+        <div className="absolute inset-0 z-10 rounded-[40px] bg-basalt-canvas/60 backdrop-blur-[1px] pointer-events-none" />
       )}
 
-      {/* Top row: avatar + name + department + GPA */}
       <div className="flex items-start gap-4">
-        {/* Avatar */}
         <div className="shrink-0">
           {profile.avatar_url ? (
             <img
               src={profile.avatar_url}
               alt={fullName}
-              className="w-16 h-16 rounded-2xl object-cover ring-2 ring-neutral-100 shadow-sm"
+              className="h-16 w-16 rounded-[16px] border-4 border-abyssal-ink object-cover shadow-[2px_2px_0px_0px_rgba(7,6,7,1)] bg-pure-white"
             />
           ) : (
             <div
               className={cn(
-                "w-16 h-16 rounded-2xl flex items-center justify-center text-white font-bold text-lg ring-2 ring-neutral-100 shadow-sm",
+                "flex h-16 w-16 items-center justify-center rounded-[16px] border-4 border-abyssal-ink text-2xl font-bold text-pure-white shadow-[2px_2px_0px_0px_rgba(7,6,7,1)] font-display uppercase tracking-wider",
                 getAvatarBg(fullName),
               )}
             >
@@ -94,62 +100,57 @@ export default function ProfileCard({
           )}
         </div>
 
-        {/* Name block */}
-        <div className="flex-1 min-w-0 pt-0.5">
+        <div className="min-w-0 flex-1 pt-0.5">
           <div className="flex items-center gap-2">
-            <h3 className="font-bold text-neutral-900 text-lg truncate leading-snug">
+            <h3 className="truncate text-3xl font-display tracking-wider uppercase leading-none text-abyssal-ink">
               {fullName}
             </h3>
-            {/* Availability dot */}
             <span
               className={cn(
-                "inline-block w-2 h-2 rounded-full shrink-0",
-                profile.is_available ? "bg-emerald-500" : "bg-neutral-300",
+                "inline-block h-3.5 w-3.5 shrink-0 rounded-full border-2 border-abyssal-ink",
+                profile.is_available ? "bg-digital-orange animate-pulse" : "bg-basalt-canvas",
               )}
-              title={profile.is_available ? "Available" : "Not available"}
+              title={profile.is_available ? "Campaign Live" : "Drafting paused"}
             />
           </div>
           {profile.department && (
-            <p className="text-xs font-semibold text-slate uppercase tracking-wider truncate mt-0.5">
+            <p className="mt-1 truncate font-mono text-[10px] uppercase tracking-[0.08em] text-abyssal-ink font-bold">
               {profile.department}
             </p>
           )}
           {profile.gpa != null && (
-            <p className="text-xs font-medium text-neutral-400 mt-0.5">
-              GPA {profile.gpa.toFixed(2)}
+            <p className="mt-1 font-mono text-xs text-abyssal-ink font-bold">
+              Scale Velocity: {profile.gpa.toFixed(2)}
             </p>
           )}
         </div>
       </div>
 
-      {/* Track + Commitment badges */}
-      <div className="flex flex-wrap gap-1.5">
-        <Badge color={trackInfo.color}>{trackInfo.label}</Badge>
-        <Badge color={COMMITMENT_COLORS[commitmentLevel]}>
-          {COMMITMENT_LABELS[commitmentLevel]}
+      <div className="flex flex-wrap gap-2">
+        <Badge color="border-2 border-abyssal-ink text-abyssal-ink bg-pure-white rounded-[90px] font-bold">{trackInfo.label}</Badge>
+        <Badge color={COMMITMENT_COLORS_SAAS[commitmentLevel]}>
+          {COMMITMENT_LABELS_SAAS[commitmentLevel]}
         </Badge>
       </div>
 
-      {/* Skills */}
       {visibleSkills.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5 pt-1">
           {visibleSkills.map((skill) => (
             <SkillBadge key={skill} skill={skill} />
           ))}
           {extraSkills > 0 && (
-            <span className="text-[12px] text-gray-400 self-center">
-              +{extraSkills} more
+            <span className="self-center text-xs text-abyssal-ink font-bold ml-1">
+              +{extraSkills} details
             </span>
           )}
         </div>
       )}
 
-      {/* Bio */}
       {profile.bio && (
-        <div>
+        <div className="pt-1">
           <p
             className={cn(
-              "text-sm text-gray-600 leading-relaxed",
+              "text-sm leading-relaxed text-abyssal-ink/80 font-semibold",
               !bioExpanded && "line-clamp-3",
             )}
           >
@@ -159,32 +160,30 @@ export default function ProfileCard({
             <button
               type="button"
               onClick={() => setBioExpanded(!bioExpanded)}
-              className="text-xs text-gray-400 hover:text-gray-600 mt-0.5 transition-colors"
+              className="mt-2 font-mono text-[10px] uppercase tracking-wider text-cyber-violet hover:text-digital-orange font-bold focus:outline-none cursor-pointer"
             >
-              {bioExpanded ? "show less" : "read more"}
+              {bioExpanded ? "Show less" : "Read design strategy"}
             </button>
           )}
         </div>
       )}
 
-      {/* Team status */}
-      <div>{teamStatusPill()}</div>
+      <div className="pt-2 border-t-2 border-abyssal-ink">{teamStatusPill()}</div>
 
-      {/* Bottom row: teammate avatars + action buttons */}
-      <div className="flex items-center justify-between pt-1">
+      <div className="flex items-center justify-between gap-3 border-t-2 border-abyssal-ink pt-4">
         <TeammateAvatars teamId={profile.team_id} />
 
         {showActions && (
-          <div className="flex gap-2 ml-auto">
+          <div className="ml-auto flex gap-2">
             {profile.linkedin_url && (
               <a
                 href={profile.linkedin_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full bg-[#0b0f1a] px-4 py-2 text-xs font-medium text-white hover:bg-[#0b0f1a]/90 transition-all shadow-sm"
+                className="gm-btn gm-btn-secondary !min-h-9 !px-4 text-xs rounded-[32px] font-bold border-2 border-abyssal-ink hover:bg-basalt-canvas/40 transition-colors shadow-[2px_2px_0px_0px_rgba(7,6,7,1)] active:translate-y-[1px] active:shadow-none"
               >
-                <Briefcase className="w-3.5 h-3.5" />
-                LinkedIn
+                <Briefcase className="h-3.5 w-3.5 text-abyssal-ink" />
+                Website
               </a>
             )}
             {profile.whatsapp_number && (
@@ -192,9 +191,9 @@ export default function ProfileCard({
                 href={`https://wa.me/${profile.whatsapp_number.replace(/\D/g, "")}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full bg-neon-green px-4 py-2 text-xs font-medium text-polar-white hover:bg-neon-green/90 transition-all shadow-sm"
+                className="gm-btn gm-btn-primary !min-h-9 !px-4 text-xs rounded-[32px] font-bold border-2 border-abyssal-ink bg-digital-orange text-pure-white hover:bg-abyssal-ink hover:text-pure-white transition-colors shadow-[2px_2px_0px_0px_rgba(7,6,7,1)] active:translate-y-[1px] active:shadow-none"
               >
-                <MessageCircle className="w-3.5 h-3.5" />
+                <MessageCircle className="h-3.5 w-3.5" />
                 WhatsApp
               </a>
             )}

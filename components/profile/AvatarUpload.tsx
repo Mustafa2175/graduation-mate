@@ -25,30 +25,30 @@ export default function AvatarUpload({ currentUrl, onSelect }: AvatarUploadProps
   })
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-3">
       <div
         {...getRootProps()}
         className={cn(
-          "relative w-24 h-24 rounded-full border-2 border-dashed flex items-center justify-center overflow-hidden cursor-pointer transition-colors group",
-          isDragActive ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:border-gray-400 bg-white",
-          isDragReject && "border-red-500 bg-red-50"
+          "relative w-24 h-24 rounded-[16px] border-4 border-dashed border-abyssal-ink flex items-center justify-center overflow-hidden cursor-pointer transition-all group shadow-[2px_2px_0px_0px_rgba(7,6,7,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none",
+          isDragActive ? "bg-pixel-glare" : "bg-ash-white",
+          isDragReject && "border-danger bg-danger/10"
         )}
       >
         <input {...getInputProps()} />
         {currentUrl ? (
           <>
             <img src={currentUrl} alt="Avatar" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <Camera className="w-6 h-6 text-white" />
+            <div className="absolute inset-0 bg-abyssal-ink/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <Camera className="w-6 h-6 text-pure-white" />
             </div>
           </>
         ) : (
-          <div className="text-gray-400 flex flex-col items-center gap-1">
-            <Camera className="w-6 h-6 group-hover:text-gray-600 transition-colors" />
+          <div className="text-abyssal-ink/50 flex flex-col items-center gap-1">
+            <Camera className="w-6 h-6 group-hover:text-digital-orange transition-colors stroke-[2.5]" />
           </div>
         )}
       </div>
-      <p className="text-[10px] text-gray-400">JPG, PNG or WebP (Max 2MB)</p>
+      <p className="font-mono text-[9px] uppercase tracking-wider text-abyssal-ink font-bold">JPG, PNG OR WEBP (MAX 2MB)</p>
     </div>
   )
 }

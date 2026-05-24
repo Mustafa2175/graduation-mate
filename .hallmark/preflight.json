@@ -1,0 +1,10 @@
+{
+  "date": "2026-05-24",
+  "framework": "Next.js 16 App Router",
+  "font_stack": "IBM Plex Sans + IBM Plex Mono + Space Grotesk",
+  "palette": "dark terminal OKLCH tokens from DESIGN.md",
+  "motion": "framer-motion installed; restrained motion-on",
+  "spacing": "4-point token scale",
+  "preserve": ["DESIGN.md system", "Next app routes", "Supabase/Auth logic"],
+  "introduce": ["Workbench app structure", "tokenized controls", "terminal navigation voice"]
+}

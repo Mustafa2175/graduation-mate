@@ -8,7 +8,7 @@ import { getConnections, resolveProfileContacts, ConnectionItem } from "@/lib/qu
 import { insertSwipe, checkMutualMatch } from "@/lib/queries/swipes";
 import { createMatch } from "@/lib/queries/matches";
 import { getInitials, getTrackBadge, getAvatarBg, cn } from "@/lib/utils";
-import { MessageCircle, Briefcase, Lock, Check, X } from "lucide-react";
+import { MessageCircle, Briefcase, Lock, Check, X, ArrowRight } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import SkillBadge from "@/components/profile/SkillBadge";
 import Button from "@/components/ui/Button";
@@ -33,13 +33,11 @@ function timeAgo(dateString: string) {
 export default function MatchesPage() {
   const router = useRouter();
   const { getFreshUser } = useAuth();
-  
   const [mutual, setMutual] = useState<ConnectionItem[]>([]);
   const [incoming, setIncoming] = useState<ConnectionItem[]>([]);
   const [outgoing, setOutgoing] = useState<ConnectionItem[]>([]);
-  
   const [isLoading, setIsLoading] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [currentUserId, setCurrentUserId] = useState("");
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
   const [activeTab, setActiveTab] = useState<"invites" | "matches" | "sent">("invites");
 
@@ -54,19 +52,14 @@ export default function MatchesPage() {
 
     try {
       const data = await getConnections(user.profileId);
-      
       setMutual(data.mutual);
       setIncoming(data.incoming);
       setOutgoing(data.outgoing);
-      
       if (updateTabs) {
         if (data.incoming.length > 0) setActiveTab("invites");
         else if (data.mutual.length > 0) setActiveTab("matches");
         else setActiveTab("invites");
       }
-      
-    } catch (err) {
-      // Silently catch error loading connections
     } finally {
       setIsLoading(false);
     }
@@ -77,90 +70,69 @@ export default function MatchesPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAccept = async (profileId: string) => {
-    setActionLoading(prev => ({ ...prev, [profileId]: true }));
-    
-    // Optimistic UI Update
-    const acceptedInvite = incoming.find(item => item.profile.id === profileId);
+    setActionLoading((prev) => ({ ...prev, [profileId]: true }));
+    const acceptedInvite = incoming.find((item) => item.profile.id === profileId);
     if (acceptedInvite) {
-      setIncoming(prev => prev.filter(item => item.profile.id !== profileId));
-      setMutual(prev => [{
-        id: `optimistic-${profileId}`,
-        type: 'MUTUAL',
-        profile: acceptedInvite.profile,
-        matched_at: new Date().toISOString(),
-        teamName: acceptedInvite.teamName,
-        teamId: acceptedInvite.teamId,
-        teammates: acceptedInvite.teammates,
-        profile1_contact_shared: true,
-        profile2_contact_shared: true,
-      }, ...prev]);
+      setIncoming((prev) => prev.filter((item) => item.profile.id !== profileId));
+      setMutual((prev) => [
+        {
+          id: `optimistic-${profileId}`,
+          type: "MUTUAL",
+          profile: acceptedInvite.profile,
+          matched_at: new Date().toISOString(),
+          teamName: acceptedInvite.teamName,
+          teamId: acceptedInvite.teamId,
+          teammates: acceptedInvite.teammates,
+          profile1_contact_shared: true,
+          profile2_contact_shared: true,
+        },
+        ...prev,
+      ]);
       setActiveTab("matches");
     }
 
     try {
       const { error: swipeError } = await insertSwipe(currentUserId, profileId, "RIGHT");
-      if (swipeError && swipeError.code !== '23505') {
-        throw new Error(`Swipe Error: ${swipeError.message}`);
-      }
-
+      if (swipeError && swipeError.code !== "23505") throw new Error(`Swipe Error: ${swipeError.message}`);
       const isMutual = await checkMutualMatch(currentUserId, profileId);
-      if (isMutual) {
-        const { error: matchError } = await createMatch(currentUserId, profileId);
-        if (matchError && matchError.code !== '23505') {
-          throw new Error(`Match Error: ${matchError.message}`);
-        }
-        toast.success("Match created! You can now contact each other.");
-      } else {
+      if (!isMutual) {
         toast.error("Invite is no longer valid.");
-        loadConnections(); // Revert optimistic update
+        loadConnections();
         return;
       }
-      
-      // Load connections in background without updating tabs to prevent layout shift
-      loadConnections(false); 
+      const { error: matchError } = await createMatch(currentUserId, profileId);
+      if (matchError && matchError.code !== "23505") throw new Error(`Match Error: ${matchError.message}`);
+      loadConnections(false);
     } catch (err: any) {
       toast.error(err.message || "Failed to accept invite");
-      // Revert optimistic update
       loadConnections();
     } finally {
-      setActionLoading(prev => ({ ...prev, [profileId]: false }));
+      setActionLoading((prev) => ({ ...prev, [profileId]: false }));
     }
   };
 
   const handleDecline = async (profileId: string) => {
-    setActionLoading(prev => ({ ...prev, [profileId]: true }));
-
-    // Optimistic Update
-    setIncoming(prev => prev.filter(item => item.profile.id !== profileId));
-
+    setActionLoading((prev) => ({ ...prev, [profileId]: true }));
+    setIncoming((prev) => prev.filter((item) => item.profile.id !== profileId));
     try {
       const { error: swipeError } = await insertSwipe(currentUserId, profileId, "LEFT");
-      if (swipeError && swipeError.code !== '23505') {
-        throw new Error(`Swipe Error: ${swipeError.message}`);
-      }
+      if (swipeError && swipeError.code !== "23505") throw new Error(`Swipe Error: ${swipeError.message}`);
       loadConnections(false);
     } catch (err: any) {
       toast.error(err.message || "Failed to skip invite");
-      loadConnections(); // Revert
+      loadConnections();
     } finally {
-      setActionLoading(prev => ({ ...prev, [profileId]: false }));
+      setActionLoading((prev) => ({ ...prev, [profileId]: false }));
     }
   };
 
   if (isLoading) {
     return (
-      <div className="p-6 h-[calc(100vh-80px)] overflow-y-auto space-y-6">
-        <div className="space-y-2">
-          <div className="w-40 h-8 bg-gray-200 rounded-lg" />
-          <div className="w-60 h-4 bg-gray-200 rounded" />
-        </div>
-        <div className="flex gap-4">
-           <div className="w-20 h-6 bg-gray-200 rounded" />
-           <div className="w-20 h-6 bg-gray-200 rounded" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="gm-page space-y-6 bg-[linear-gradient(to_bottom_right,var(--color-whisper-fade-blue),var(--color-whisper-fade-violet)/0.2)]">
+        <div className="gm-skeleton h-12 w-64 rounded-xl" />
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-gray-200 rounded-2xl aspect-[3/4] animate-pulse" />
+            <div key={i} className="gm-skeleton aspect-[3/4] rounded-[32px]" />
           ))}
         </div>
       </div>
@@ -173,127 +145,86 @@ export default function MatchesPage() {
     const isActionLoading = actionLoading[profile.id];
 
     return (
-      <div key={item.id} className="bg-white/70 backdrop-blur-2xl rounded-[24px] border border-white/60 shadow-sm overflow-hidden flex flex-col">
-        {/* Header: Avatar & Name */}
-        <div className="p-3 pb-0 flex flex-col items-center text-center space-y-2">
-          {profile.avatar_url ? (
-            <img src={profile.avatar_url} alt={profile.full_name} className="w-14 h-14 rounded-full object-cover ring-2 ring-gray-50" />
-          ) : (
-            <div className={cn("w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-base ring-2 ring-gray-50", getAvatarBg(profile.full_name))}>
-              {getInitials(profile.full_name)}
+      <article key={item.id} className="gm-card relative flex flex-col overflow-hidden bg-white border border-rule rounded-[32px] p-6 shadow-md hover:translate-y-[-2px] transition-transform duration-200">
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            {profile.avatar_url ? (
+              <img src={profile.avatar_url} alt={profile.full_name} className="h-12 w-12 rounded-[16px] border border-rule object-cover shadow-sm" />
+            ) : (
+              <div className={cn("flex h-12 w-12 items-center justify-center rounded-[16px] text-sm font-bold text-white shadow-sm font-display", getAvatarBg(profile.full_name))}>
+                {getInitials(profile.full_name)}
+              </div>
+            )}
+            <div className="min-w-0">
+              <h3 className="truncate text-base font-bold text-ink font-display">{profile.full_name}</h3>
+              <p className="mt-0.5 font-mono text-[10px] uppercase tracking-wider text-silver-pine font-semibold">
+                {type === "invites" ? `Shared ${timeAgo(item.matched_at)}` : type === "matches" ? `Saved ${timeAgo(item.matched_at)}` : `Submitted ${timeAgo(item.matched_at)}`}
+              </p>
             </div>
-          )}
-          <div>
-            <h3 className="font-bold text-gray-900 text-sm line-clamp-1">{profile.full_name}</h3>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {type === "invites" ? `Interested ${timeAgo(item.matched_at)}` : type === "matches" ? `Matched ${timeAgo(item.matched_at)}` : `Sent ${timeAgo(item.matched_at)}`}
-            </p>
           </div>
-        </div>
 
-        {/* Track Badge */}
-        <div className="px-3 pt-2 flex justify-center">
-          <Badge color={getTrackBadge(profile.track).color}>{getTrackBadge(profile.track).label}</Badge>
-        </div>
-
-        {/* Skills */}
-        <div className="px-3 py-2 flex-1 flex flex-col justify-center min-h-[50px]">
-          <div className="flex flex-wrap gap-1 justify-center">
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            <Badge color="border-rule text-ink rounded-[90px]">{getTrackBadge(profile.track).label}</Badge>
             {profile.skills?.slice(0, 3).map((skill: string) => (
               <SkillBadge key={skill} skill={skill} />
             ))}
-            {(profile.skills?.length ?? 0) > 3 && (
-              <span className="text-xs text-gray-400 self-center">+{profile.skills!.length - 3}</span>
-            )}
           </div>
-        </div>
 
-        {/* Bio (Emphasize collaboration on invites) */}
-        {type === "invites" && profile.bio && (
-           <div className="px-3 py-2 text-xs text-gray-600 italic text-center border-t border-gray-50 line-clamp-3">
-             "{profile.bio}"
-           </div>
-        )}
+          {type === "invites" && profile.bio && (
+            <p className="line-clamp-3 border-t border-rule pt-3 text-sm leading-relaxed text-silver-pine">
+              {profile.bio}
+            </p>
+          )}
 
-        {/* Team Details */}
-        {item.teamName && (
-          <div className="px-3 py-2.5 border-t border-gray-100 bg-neutral-50 text-left flex items-center justify-between gap-2">
-            <div>
-              <p className="text-xs font-black text-dark-carbon uppercase tracking-wider line-clamp-1">
-                👥 Team: {item.teamName}
+          {item.teamName && (
+            <div className="rounded-xl border border-rule bg-sky-wash/30 p-3 mt-2">
+              <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-accent font-semibold">
+                Workspace: {item.teamName}
               </p>
-              {item.teammates && item.teammates.length > 0 ? (
-                 <div className="mt-1 flex items-center gap-1.5">
-                   <span className="text-xs text-gray-400 font-semibold shrink-0">Classmates:</span>
-                   <div className="flex -space-x-1.5 overflow-hidden">
-                     {item.teammates.map((t: any) =>
-                       t.avatar_url ? (
-                         <img key={t.id} src={t.avatar_url} alt={t.full_name} title={t.full_name} className="inline-block h-5 w-5 rounded-full ring-2 ring-white object-cover" />
-                       ) : (
-                         <div key={t.id} title={t.full_name} className={cn("inline-block h-5 w-5 rounded-full ring-2 ring-white flex items-center justify-center text-[8px] font-black text-white", getAvatarBg(t.full_name))}>
-                           {getInitials(t.full_name)}
-                         </div>
-                       )
-                     )}
-                   </div>
-                 </div>
-              ) : (
-                <p className="text-xs text-gray-400 italic mt-0.5">No teammates joined yet</p>
+              {item.teamId && (
+                <Link href={`/teams/${item.teamId}`} className="mt-2 inline-flex items-center gap-1 text-xs text-electric-blue hover:text-luminous-blue font-semibold underline">
+                  View workspace <ArrowRight className="h-3 w-3" />
+                </Link>
               )}
             </div>
-            {item.teamId && (
-              <Link href={`/teams/${item.teamId}`} className="p-1.5 rounded-lg bg-dark-carbon hover:bg-midnight-void text-absolute-zero transition-colors shrink-0 flex items-center justify-center" title="View Team Details">
-                <svg className="w-3.5 h-3.5 stroke-current fill-none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                  <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
-                </svg>
-              </Link>
-            )}
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* Actions based on type */}
-        <div className="p-2 bg-gray-50 border-t border-gray-100 flex gap-2 min-h-[46px] items-center justify-center">
+        <div className="mt-6 flex gap-2 border-t border-rule pt-4">
           {type === "matches" && (
             <>
               {whatsapp_number && (
-                <button onClick={() => window.open(`https://wa.me/${whatsapp_number.replace(/\D/g, "")}`)} className="flex-1 py-2 bg-neon-green hover:bg-neon-green/90 text-polar-white rounded-xl flex items-center justify-center transition-colors shadow-sm" title="WhatsApp">
-                  <MessageCircle className="w-4 h-4 mr-1" />
-                  <span className="text-[11px] font-bold">WhatsApp</span>
+                <button onClick={() => window.open(`https://wa.me/${whatsapp_number.replace(/\D/g, "")}`)} className="gm-btn gm-btn-primary flex-1 !min-h-11 text-xs rounded-[32px] font-semibold">
+                  <MessageCircle className="h-4 w-4" /> WhatsApp
                 </button>
               )}
               {linkedin_url && (
-                <button onClick={() => window.open(linkedin_url)} className="flex-1 py-2 bg-dark-carbon hover:bg-midnight-void text-absolute-zero rounded-xl flex items-center justify-center transition-colors shadow-sm" title="LinkedIn">
-                  <Briefcase className="w-4 h-4 mr-1" />
-                  <span className="text-[11px] font-bold">LinkedIn</span>
+                <button onClick={() => window.open(linkedin_url)} className="gm-btn gm-btn-secondary flex-1 !min-h-11 text-xs rounded-[32px] font-semibold border border-rule hover:bg-slate-50">
+                  <Briefcase className="h-4 w-4" /> Website
                 </button>
               )}
               {!whatsapp_number && !linkedin_url && (
-                <div className="flex-1 py-2 text-xs text-center text-gray-400 font-medium italic">No links provided</div>
+                <div className="flex-1 py-2.5 text-center text-xs text-silver-pine font-semibold">No assets provided</div>
               )}
             </>
           )}
-
           {type === "invites" && (
             <>
-              <button disabled={isActionLoading} onClick={() => handleDecline(profile.id)} className="flex-1 py-2 bg-deep-space hover:bg-midnight-void text-ash-gray rounded-xl flex items-center justify-center transition-colors shadow-sm disabled:opacity-50" title="Skip">
-                <X className="w-4 h-4 mr-1" />
-                <span className="text-[11px] font-bold">Skip</span>
+              <button disabled={isActionLoading} onClick={() => handleDecline(profile.id)} className="gm-btn gm-btn-secondary flex-1 !min-h-11 text-xs rounded-[32px] font-semibold border border-rule hover:bg-slate-50 cursor-pointer">
+                <X className="h-4 w-4" /> Skip
               </button>
-              <button disabled={isActionLoading} onClick={() => handleAccept(profile.id)} className="flex-1 py-2 bg-dark-carbon hover:bg-midnight-void text-absolute-zero rounded-xl flex items-center justify-center transition-colors shadow-sm disabled:opacity-50" title="Accept & Connect">
-                <Check className="w-4 h-4 mr-1" />
-                <span className="text-[11px] font-bold">Accept & Connect</span>
+              <button disabled={isActionLoading} onClick={() => handleAccept(profile.id)} className="gm-btn gm-btn-primary flex-1 !min-h-11 text-xs rounded-[32px] font-semibold cursor-pointer">
+                <Check className="h-4 w-4" /> Save to Vault
               </button>
             </>
           )}
-
           {type === "sent" && (
-            <div className="flex-1 flex items-center justify-center py-2 bg-gray-100 text-gray-400 rounded-xl gap-1 cursor-not-allowed">
-              <Lock className="w-3.5 h-3.5" />
-              <span className="text-xs font-extrabold tracking-wider uppercase">Pending...</span>
+            <div className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-rule bg-sky-wash/20 py-2.5 font-mono text-[10px] font-semibold uppercase text-silver-pine">
+              <Lock className="h-3.5 w-3.5" /> Pending Review
             </div>
           )}
         </div>
-      </div>
+      </article>
     );
   };
 
@@ -301,61 +232,59 @@ export default function MatchesPage() {
     <button
       onClick={() => setActiveTab(id)}
       className={cn(
-        "flex-1 pb-3 text-sm font-semibold transition-colors border-b-2 relative",
-        activeTab === id ? "border-dark-carbon text-dark-carbon" : "border-transparent text-gray-500 hover:text-gray-700"
+        "flex min-h-12 flex-1 items-center justify-center gap-2 px-3 py-2 font-mono text-xs uppercase tracking-[0.08em] transition-all cursor-pointer border-r-4 border-abyssal-ink last:border-r-0",
+        activeTab === id
+          ? "bg-digital-orange text-pure-white font-bold"
+          : "bg-ash-white text-abyssal-ink hover:bg-basalt-canvas/40",
       )}
     >
-      <span className="flex items-center justify-center gap-1.5">
-        {label}
-        {count > 0 && (
-          <span className={cn(
-            "px-1.5 py-0.5 rounded-full text-[10px] font-bold",
-            activeTab === id ? "bg-dark-carbon text-absolute-zero" : "bg-gray-200 text-gray-600"
-          )}>
-            {count}
-          </span>
-        )}
-      </span>
+      {label}
+      {count > 0 && (
+        <span className={cn(
+          "rounded-[90px] px-2.5 py-0.5 text-[10px] font-bold border-2 border-abyssal-ink shadow-[1px_1px_0px_0px_rgba(7,6,7,1)]",
+          activeTab === id ? "bg-pure-white text-abyssal-ink" : "bg-pixel-glare text-abyssal-ink"
+        )}>
+          {count}
+        </span>
+      )}
     </button>
   );
 
   const activeList = activeTab === "invites" ? incoming : activeTab === "matches" ? mutual : outgoing;
 
   return (
-    <div className="p-6 h-[calc(100vh-80px)] overflow-y-auto">
+    <div className="gm-page bg-basalt-canvas">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Connections</h1>
-        <p className="text-sm text-gray-500 mt-1">Manage your incoming invites and mutual matches</p>
+        <p className="gm-kicker">Saved Pipeline</p>
+        <h1 className="mt-2 text-5xl font-display uppercase tracking-wider text-abyssal-ink leading-none">Campaign Pipeline</h1>
+        <p className="mt-2 text-sm leading-relaxed text-abyssal-ink font-semibold">Manage incoming creative inputs, saved visual drafts, and pending workspace concepts.</p>
       </div>
 
-      <div className="flex border-b border-gray-200 mb-6">
-        {renderTabButton("invites", "Invites", incoming.length)}
-        {renderTabButton("matches", "Matches", mutual.length)}
-        {renderTabButton("sent", "Sent", outgoing.length)}
+      <div className="mb-8 flex border-4 border-abyssal-ink bg-ash-white rounded-[24px] overflow-hidden shadow-[4px_4px_0px_0px_rgba(7,6,7,1)]">
+        {renderTabButton("invites", "Shared Inputs", incoming.length)}
+        {renderTabButton("matches", "Saved Vault", mutual.length)}
+        {renderTabButton("sent", "Pending Review", outgoing.length)}
       </div>
 
       {activeList.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center space-y-6 bg-white rounded-3xl border border-gray-100 shadow-sm">
-          <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-3xl">
-            👻
-          </div>
-          <div className="space-y-2">
-            <h3 className="font-semibold text-gray-900 text-lg">
-              {activeTab === "invites" ? "No invites yet" : activeTab === "matches" ? "No matches yet" : "No sent requests"}
+        <div className="flex flex-col items-center justify-center space-y-6 py-20 text-center bg-ash-white border-4 border-abyssal-ink rounded-[40px] shadow-[6px_6px_0px_0px_rgba(7,6,7,1)] animate-reveal">
+          <div>
+            <h3 className="text-3xl font-display uppercase tracking-wider leading-none text-abyssal-ink">
+              {activeTab === "invites" ? "No inputs yet" : activeTab === "matches" ? "No saved concepts" : "No pending reviews"}
             </h3>
-            <p className="text-sm text-gray-500 max-w-[200px] mx-auto">
-              {activeTab === "invites" ? "Keep your profile updated to attract teammates." : activeTab === "matches" ? "Accept an invite or match on discover to start collaborating." : "Start discovering profiles to send invites."}
+            <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-abyssal-ink font-semibold opacity-85">
+              {activeTab === "invites" ? "Keep your brand style parameters specific to capture target suggestions." : activeTab === "matches" ? "Develop custom content ideas or refresh trend signals in Trend Lab." : "Discover trending visual content to submit pipeline reviews."}
             </p>
           </div>
           {activeTab !== "invites" && (
-            <Link href="/discover" className="block w-full max-w-[200px]">
-              <Button>Find Teammates</Button>
+            <Link href="/discover" className="block w-full max-w-[200px] pt-2">
+              <Button className="gm-btn gm-btn-primary w-full rounded-[32px] shadow-[2px_2px_0px_0px_rgba(7,6,7,1)] active:translate-y-[1px] active:shadow-none">Discover Trends</Button>
             </Link>
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-10">
-          {activeList.map(item => renderProfileCard(item, activeTab))}
+        <div className="grid grid-cols-1 gap-8 pb-10 md:grid-cols-2 lg:grid-cols-3">
+          {activeList.map((item) => renderProfileCard(item, activeTab))}
         </div>
       )}
     </div>

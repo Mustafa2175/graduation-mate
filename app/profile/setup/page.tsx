@@ -161,7 +161,7 @@ export default function ProfileSetupPage() {
         // The Supabase cookie session handles server-side auth; this entry
         // is the client-side fast-path used by useSwipe and other hooks.
         setCurrentUser(authData.user.id, updatedDraft.full_name!);
-        toast.success("Welcome to TeamUp!");
+        toast.success("Welcome to GenieStudio!");
         router.replace("/discover");
       } catch (e: any) {
         toast.error(e.message || "Something went wrong");
@@ -171,96 +171,32 @@ export default function ProfileSetupPage() {
     }
   };
 
-  // Background Video Animation Fade Loop logic
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    let rafId: number;
-
-    const checkTime = () => {
-      if (video.duration) {
-        const current = video.currentTime;
-        const dur = video.duration;
-        const fadeTime = 0.5; // 0.5s fade duration
-
-        let targetOpacity = 1;
-
-        // Fade in over 0.5s at the start
-        if (current < fadeTime) {
-          targetOpacity = current / fadeTime;
-        }
-        // Fade out over 0.5s before the end
-        else if (dur - current < fadeTime) {
-          targetOpacity = (dur - current) / fadeTime;
-        }
-
-        setVideoOpacity(Math.max(0, Math.min(1, targetOpacity)));
-      }
-      rafId = requestAnimationFrame(checkTime);
-    };
-
-    rafId = requestAnimationFrame(checkTime);
-
-    const handleEnded = () => {
-      setVideoOpacity(0);
-      setTimeout(() => {
-        if (video) {
-          video.currentTime = 0;
-          video.play().catch(() => {});
-        }
-      }, 100);
-    };
-
-    video.addEventListener("ended", handleEnded);
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      video.removeEventListener("ended", handleEnded);
-    };
-  }, []);
-
   return (
-    <div className="min-h-screen bg-white text-black relative overflow-hidden font-sans pb-28">
-      {/* Background Video Layer */}
-      <div className="absolute inset-[300px_0_0_0] z-0 overflow-hidden pointer-events-none">
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          playsInline
-          className="w-full h-full object-cover transition-opacity duration-200"
-          style={{ opacity: videoOpacity }}
-          src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_083109_283f3553-e28f-428b-a723-d639c617eb2b.mp4"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-white via-transparent to-white pointer-events-none" />
-      </div>
-
+    <div className="min-h-screen relative overflow-hidden font-body pb-28 bg-basalt-canvas text-abyssal-ink">
       <div className="w-full mx-auto space-y-8 relative z-10 px-4 sm:px-6 max-w-xl">
-        {/* Cinematic Header */}
-        <div className="space-y-4 text-center pt-16 pb-6 animate-fade-rise">
-          <h1
-            style={{ fontFamily: "'Instrument Serif', serif" }}
-            className="text-5xl sm:text-6xl font-normal leading-[0.95] tracking-tight text-black"
-          >
-            Create Your Profile
+        {/* Onboarding Header */}
+        <div className="space-y-4 pt-16 pb-6 text-center animate-fade-rise">
+          <p className="gm-kicker">
+            Brand Vault Setup
+          </p>
+          <h1 className="text-5xl font-display uppercase tracking-wider text-abyssal-ink leading-none">
+            Create your Brand Vault.
           </h1>
-          <p className="text-[#6F6F6F] text-xs sm:text-sm max-w-md mx-auto leading-relaxed pt-1">
-            Let's build your eternal profile step-by-step to match with ideal
-            classmates.
+          <p className="text-abyssal-ink font-semibold text-xs sm:text-sm max-w-md mx-auto leading-relaxed pt-1 opacity-85">
+            Define your visual presets, target channels, and tone guidelines to begin generating on-brand content.
           </p>
         </div>
 
         {/* Segmented Progress Bar */}
-        <div className="flex gap-2 max-w-md mx-auto py-2">
+        <div className="flex gap-2.5 max-w-md mx-auto py-2">
           {[1, 2, 3, 4, 5].map((step) => (
             <div
               key={step}
               className={cn(
-                "h-1.5 flex-1 rounded-full transition-all duration-300",
+                "h-3 flex-1 rounded-full transition-all duration-300 border-2 border-abyssal-ink",
                 step <= currentStep
-                  ? "bg-black shadow-[0_0_10px_rgba(0,0,0,0.1)]"
-                  : "bg-black/5",
+                  ? "bg-digital-orange shadow-[1px_1px_0px_0px_rgba(7,6,7,1)]"
+                  : "bg-pure-white",
               )}
             />
           ))}

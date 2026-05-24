@@ -18,22 +18,21 @@ export default function Toggle({ checked, onChange, label, labelClassName, class
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={cn(
-          'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2',
-          checked ? 'bg-white' : 'bg-white/20',
+          'relative inline-flex h-6 w-11 items-center shrink-0 rounded-full border-2 border-abyssal-ink transition-colors duration-200 focus:outline-none shadow-[1px_1px_0px_0px_rgba(7,6,7,1)]',
+          checked ? 'bg-digital-orange' : 'bg-pure-white',
           className
         )}
       >
         <span
           className={cn(
-            'pointer-events-none inline-block h-5 w-5 transform rounded-full ring-0 transition duration-200 ease-in-out',
-            checked ? 'translate-x-5 bg-neutral-900 shadow-inner' : 'translate-x-0 bg-white shadow-md'
+            'pointer-events-none inline-block h-4.5 w-4.5 transform rounded-full border-2 border-abyssal-ink transition duration-200',
+            checked ? 'translate-x-5 bg-pure-white' : 'translate-x-0.5 bg-abyssal-ink'
           )}
         />
       </button>
       {label && (
-        <span className={cn("text-sm font-medium text-gray-700", labelClassName)}>{label}</span>
+        <span className={cn("text-sm font-bold text-abyssal-ink", labelClassName)}>{label}</span>
       )}
     </label>
   )
 }
-

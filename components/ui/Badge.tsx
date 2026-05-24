@@ -7,16 +7,6 @@ interface BadgeProps {
   className?: string
 }
 
-export default function Badge({ children, color = 'bg-gray-100 text-gray-700', className }: BadgeProps) {
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-        color,
-        className
-      )}
-    >
-      {children}
-    </span>
-  )
+export default function Badge({ children, color = '', className }: BadgeProps) {
+  return <span className={cn('gm-badge', color, className)}>{children}</span>
 }
