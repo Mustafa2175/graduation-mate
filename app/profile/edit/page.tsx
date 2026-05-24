@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import {
   getProfileById,
   updateProfile,
@@ -82,7 +82,12 @@ const TRACK_OPTIONS = [
 const schema = z.object({
   full_name: z.string().min(1, "Full name is required"),
   department: z.string().optional(),
-  gpa: z.coerce.number().min(0).max(4).optional().or(z.literal("")),
+  gpa: z.coerce
+    .number()
+    .min(2, "GPA must be at least 2")
+    .max(4, "GPA must be between 2 and 4")
+    .optional()
+    .or(z.literal("")),
   track: z.string().min(1, "Track is required"),
   bio: z.string().max(300).optional(),
   linkedin_url: z.union([
@@ -123,7 +128,7 @@ type FormData = z.output<typeof schema>;
 
 export default function ProfileEditPage() {
   const router = useRouter();
-  const { getFreshUser, setCurrentUser, clearCurrentUser } = useAuth();
+  const { getFreshUser, setCurrentUser, clearCurrentUser, isLoading: authLoading } = useAuth();
 
   const [isAvailable, setIsAvailable] = useState(true);
   const [skills, setSkills] = useState<string[]>([]);
@@ -159,7 +164,10 @@ export default function ProfileEditPage() {
   const teamStatus = watch("team_status");
   const bio = watch("bio") ?? "";
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
+    if (authLoading) return;
+    setIsLoading(true);
+
     const user = await getFreshUser();
     if (!user) {
       setIsLoading(false);
@@ -203,7 +211,7 @@ export default function ProfileEditPage() {
     }
 
     setIsLoading(false);
-  };
+  }, [authLoading, getFreshUser, reset, router]);
 
   useEffect(() => {
     register("track");
@@ -211,7 +219,7 @@ export default function ProfileEditPage() {
 
   useEffect(() => {
     loadData();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loadData]);
 
   const handleAvatarSelect = (file: File) => {
     setAvatarFile(file);
@@ -284,8 +292,7 @@ export default function ProfileEditPage() {
       if (finalAvatarUrl !== avatarPreview) {
         profilePayload.avatar_url = finalAvatarUrl;
       }
-
-      const { data: profile, error } = await updateProfile(
+      const { data: profile, error } = await updateProfile(
         profileId,
         profilePayload,
       );
@@ -293,9 +300,16 @@ export default function ProfileEditPage() {
       if (error || !profile)
         throw new Error(error?.message || "Failed to update profile");
 
+      let normalizedLinkedin = data.linkedin_url ? data.linkedin_url.trim() : null;
+      if (normalizedLinkedin && !/^https?:\/\//i.test(normalizedLinkedin)) {
+        normalizedLinkedin = `https://${normalizedLinkedin}`;
+      }
+      
+      let normalizedWhatsapp = data.whatsapp_number ? data.whatsapp_number.replace(/[^\d+]/g, '') : null;
+
       const { error: contactsError } = await upsertProfileContacts(profileId, {
-        linkedin_url: data.linkedin_url || null,
-        whatsapp_number: data.whatsapp_number || null,
+        linkedin_url: normalizedLinkedin,
+        whatsapp_number: normalizedWhatsapp,
       });
       if (contactsError)
         throw new Error(contactsError.message || "Failed to update contacts");
@@ -312,7 +326,7 @@ export default function ProfileEditPage() {
   const handleCreateTeam = async () => {
     if (!teamNameInput.trim()) return;
     try {
-      await createTeam(teamNameInput, profileId!);
+      await createTeam(teamNameInput.trim(), profileId!);
       setTeamNameInput("");
       toast.success("Team created!");
       loadData();
@@ -322,9 +336,10 @@ export default function ProfileEditPage() {
   };
 
   const handleJoinTeam = async () => {
-    if (!joinIdInput.trim()) return;
+    const inviteCode = joinIdInput.trim();
+    if (!inviteCode) return;
     try {
-      await joinTeam(joinIdInput, profileId!);
+      await joinTeam(inviteCode, profileId!);
       setJoinIdInput("");
       toast.success("Joined team!");
       loadData();
@@ -345,8 +360,9 @@ export default function ProfileEditPage() {
   };
 
   const copyId = () => {
-    navigator.clipboard.writeText(profileId!);
-    toast.success("Your Profile ID copied!");
+    if (!team?.id) return;
+    navigator.clipboard.writeText(team.id);
+    toast.success("Team invite ID copied!");
   };
 
   if (isLoading) {
@@ -437,8 +453,10 @@ export default function ProfileEditPage() {
               />
               <Input
                 id="gpa"
-                label="GPA (0–4)"
+                label="GPA (2-4)"
                 type="number"
+                min="2"
+                max="4"
                 step="0.01"
                 placeholder="e.g. 3.5"
                 labelClassName="text-white/70 font-medium text-xs tracking-wider uppercase"
@@ -699,7 +717,9 @@ export default function ProfileEditPage() {
                   Your Team
                 </h2>
                 <button
+                  type="button"
                   onClick={copyId}
+                  disabled={!team?.id}
                   className="text-xs text-white/60 hover:text-white font-semibold uppercase tracking-wider transition-colors cursor-pointer bg-white/5 border border-white/10 px-3 py-1.5 rounded-full"
                 >
                   Copy Invite ID
@@ -743,8 +763,8 @@ export default function ProfileEditPage() {
                     </label>
                     <Input
                       value={joinIdInput}
-                      onChange={(e) => setJoinIdInput(e.target.value)}
-                      placeholder="Team Invite Token"
+                      onChange={(e) => setJoinIdInput(e.target.value.trim())}
+                      placeholder="Team Invite ID"
                       className="bg-white/5 border-white/10 text-white placeholder-white/30 focus:ring-white focus:text-white"
                     />
                     <button

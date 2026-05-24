@@ -9,7 +9,7 @@ import SwipeButtons from "@/components/discover/SwipeButtons";
 
 export default function DiscoverPage() {
   const router = useRouter();
-  const { getFreshUser } = useAuth();
+  const { getFreshUser, isLoading: authLoading } = useAuth();
   const {
     profiles,
     currentIndex,
@@ -30,6 +30,7 @@ export default function DiscoverPage() {
     let isMounted = true;
 
     const verifyAuth = async () => {
+      if (authLoading) return;
       const user = await getFreshUser();
       if (!isMounted) return;
       if (!user) {
@@ -45,7 +46,7 @@ export default function DiscoverPage() {
     return () => {
       isMounted = false;
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [authLoading, getFreshUser, router]);
 
   // Infinite scroll trigger
   useEffect(() => {

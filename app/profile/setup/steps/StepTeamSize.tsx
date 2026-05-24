@@ -342,7 +342,7 @@ export default function StepTeamSize({ draft, onNext, onBack }: StepProps) {
           : collaborationStatus === "leader"
             ? neededRoles.join(", ")
             : myRole,
-      team_invite_code: teamInviteCode,
+      team_invite_code: teamInviteCode.trim(),
     });
   };
 
@@ -551,10 +551,10 @@ export default function StepTeamSize({ draft, onNext, onBack }: StepProps) {
               label="Team Invite Code *"
               value={teamInviteCode}
               onChange={(e) => {
-                setTeamInviteCode(e.target.value);
+                setTeamInviteCode(e.target.value.trim());
                 setErrors((prev) => ({ ...prev, teamInviteCode: "" }));
               }}
-              placeholder="e.g. ABCD1234"
+              placeholder="e.g. 2ce84f82-f1eb-4881-8203-bd28a8c57ed9"
               labelClassName="text-black/75 font-semibold text-xs tracking-wider uppercase"
               className="bg-black/[0.02] border-black/10 text-black placeholder-black/30 focus:border-black/35 focus:ring-1 focus:ring-black focus:bg-white"
               error={errors.teamInviteCode}

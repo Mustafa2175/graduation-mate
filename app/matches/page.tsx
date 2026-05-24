@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,11 +8,22 @@ import { getConnections, resolveProfileContacts, ConnectionItem } from "@/lib/qu
 import { insertSwipe, checkMutualMatch } from "@/lib/queries/swipes";
 import { createMatch } from "@/lib/queries/matches";
 import { getInitials, getTrackBadge, getAvatarBg, cn } from "@/lib/utils";
-import { MessageCircle, Briefcase, Lock, Check, X } from "lucide-react";
+import {
+  MessageCircle, Briefcase, Lock, Check, X, UserPlus, Users
+} from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import SkillBadge from "@/components/profile/SkillBadge";
 import Button from "@/components/ui/Button";
 import { toast } from "react-hot-toast";
+import {
+  TeamInvitation,
+  getMyTeamId,
+  sendTeamInvitation,
+  getPendingInvitationsReceived,
+  getSentInvitations,
+  acceptTeamInvitation,
+  declineTeamInvitation,
+} from "@/lib/queries/teamInvitations";
 
 function timeAgo(dateString: string) {
   if (!dateString) return "Just now";
@@ -30,20 +41,44 @@ function timeAgo(dateString: string) {
   return date.toLocaleDateString();
 }
 
+const WHATSAPP_MESSAGE = encodeURIComponent(
+  "Hi, we matched on the platform and I'd like to discuss collaboration."
+);
+
+function normalizeWhatsapp(raw: string): string {
+  return raw.replace(/[^\d+]/g, "");
+}
+
+function normalizeLinkUrl(url: string): string {
+  if (!url) return "";
+  if (/^https?:\/\//i.test(url)) return url;
+  return `https://${url}`;
+}
+
 export default function MatchesPage() {
   const router = useRouter();
-  const { getFreshUser } = useAuth();
-  
+  const { getFreshUser, isLoading: authLoading } = useAuth();
+
   const [mutual, setMutual] = useState<ConnectionItem[]>([]);
   const [incoming, setIncoming] = useState<ConnectionItem[]>([]);
   const [outgoing, setOutgoing] = useState<ConnectionItem[]>([]);
-  
+
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
   const [activeTab, setActiveTab] = useState<"invites" | "matches" | "sent">("invites");
 
-  const loadConnections = async (updateTabs = true) => {
+  // Team invitation state
+  const [myTeamId, setMyTeamId] = useState<string | null>(null);
+  const [teamInvitesReceived, setTeamInvitesReceived] = useState<TeamInvitation[]>([]);
+  const [sentInvitations, setSentInvitations] = useState<TeamInvitation[]>([]);
+  const [inviteActionLoading, setInviteActionLoading] = useState<Record<string, boolean>>({});
+
+  const loadConnections = useCallback(async (updateTabs = true, showLoading = false) => {
+    if (authLoading) return;
+    if (showLoading) setIsLoading(true);
+    setLoadError(null);
     const user = await getFreshUser();
     if (!user) {
       setIsLoading(false);
@@ -53,33 +88,39 @@ export default function MatchesPage() {
     setCurrentUserId(user.profileId);
 
     try {
-      const data = await getConnections(user.profileId);
-      
+      const [data, teamId, received, sent] = await Promise.all([
+        getConnections(user.profileId),
+        getMyTeamId(user.profileId),
+        getPendingInvitationsReceived(user.profileId),
+        getSentInvitations(user.profileId),
+      ]);
+
       setMutual(data.mutual);
       setIncoming(data.incoming);
       setOutgoing(data.outgoing);
-      
+      setMyTeamId(teamId);
+      setTeamInvitesReceived(received);
+      setSentInvitations(sent);
+
       if (updateTabs) {
         if (data.incoming.length > 0) setActiveTab("invites");
         else if (data.mutual.length > 0) setActiveTab("matches");
         else setActiveTab("invites");
       }
-      
-    } catch (err) {
-      // Silently catch error loading connections
+    } catch (err: any) {
+      setLoadError(err.message || "Failed to load connections.");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [authLoading, getFreshUser, router]);
 
   useEffect(() => {
-    loadConnections();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    loadConnections(true, true);
+  }, [loadConnections]);
 
   const handleAccept = async (profileId: string) => {
     setActionLoading(prev => ({ ...prev, [profileId]: true }));
-    
-    // Optimistic UI Update
+
     const acceptedInvite = incoming.find(item => item.profile.id === profileId);
     if (acceptedInvite) {
       setIncoming(prev => prev.filter(item => item.profile.id !== profileId));
@@ -112,15 +153,13 @@ export default function MatchesPage() {
         toast.success("Match created! You can now contact each other.");
       } else {
         toast.error("Invite is no longer valid.");
-        loadConnections(); // Revert optimistic update
+        loadConnections();
         return;
       }
-      
-      // Load connections in background without updating tabs to prevent layout shift
-      loadConnections(false); 
+
+      loadConnections(false);
     } catch (err: any) {
       toast.error(err.message || "Failed to accept invite");
-      // Revert optimistic update
       loadConnections();
     } finally {
       setActionLoading(prev => ({ ...prev, [profileId]: false }));
@@ -129,8 +168,6 @@ export default function MatchesPage() {
 
   const handleDecline = async (profileId: string) => {
     setActionLoading(prev => ({ ...prev, [profileId]: true }));
-
-    // Optimistic Update
     setIncoming(prev => prev.filter(item => item.profile.id !== profileId));
 
     try {
@@ -141,9 +178,70 @@ export default function MatchesPage() {
       loadConnections(false);
     } catch (err: any) {
       toast.error(err.message || "Failed to skip invite");
-      loadConnections(); // Revert
+      loadConnections();
     } finally {
       setActionLoading(prev => ({ ...prev, [profileId]: false }));
+    }
+  };
+
+  const handleSendTeamInvite = async (recipientProfileId: string) => {
+    if (!myTeamId) {
+      toast.error("Create or join a team before inviting teammates.");
+      return;
+    }
+    setInviteActionLoading(prev => ({ ...prev, [recipientProfileId]: true }));
+    try {
+      await sendTeamInvitation(myTeamId, currentUserId, recipientProfileId);
+      toast.success("Team invite sent!");
+      // Optimistically add to sent list so the button greys out immediately
+      setSentInvitations(prev => [
+        ...prev,
+        {
+          id: `optimistic-${recipientProfileId}`,
+          team_id: myTeamId,
+          sender_profile_id: currentUserId,
+          recipient_profile_id: recipientProfileId,
+          status: 'PENDING',
+          created_at: new Date().toISOString(),
+          responded_at: null,
+        },
+      ]);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send invite.");
+    } finally {
+      setInviteActionLoading(prev => ({ ...prev, [recipientProfileId]: false }));
+    }
+  };
+
+  const handleAcceptTeamInvite = async (inv: TeamInvitation) => {
+    setInviteActionLoading(prev => ({ ...prev, [inv.id]: true }));
+    // Optimistic remove
+    setTeamInvitesReceived(prev => prev.filter(i => i.id !== inv.id));
+    try {
+      await acceptTeamInvitation(inv.id, inv.team_id, currentUserId);
+      toast.success(`You joined ${(inv.team as any)?.name ?? "the team"}!`);
+      // Reload to reflect new team membership
+      loadConnections(false);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to accept team invite.");
+      // Restore if failed
+      setTeamInvitesReceived(prev => [inv, ...prev]);
+    } finally {
+      setInviteActionLoading(prev => ({ ...prev, [inv.id]: false }));
+    }
+  };
+
+  const handleDeclineTeamInvite = async (inv: TeamInvitation) => {
+    setInviteActionLoading(prev => ({ ...prev, [inv.id]: true }));
+    setTeamInvitesReceived(prev => prev.filter(i => i.id !== inv.id));
+    try {
+      await declineTeamInvitation(inv.id, currentUserId);
+      toast.success("Invite declined.");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to decline invite.");
+      setTeamInvitesReceived(prev => [inv, ...prev]);
+    } finally {
+      setInviteActionLoading(prev => ({ ...prev, [inv.id]: false }));
     }
   };
 
@@ -167,10 +265,36 @@ export default function MatchesPage() {
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="p-6 h-[calc(100vh-80px)] overflow-y-auto flex flex-col justify-center items-center">
+        <div className="w-full max-w-md bg-white rounded-3xl border border-red-100 p-8 text-center shadow-lg flex flex-col items-center space-y-4">
+          <div className="text-5xl">⚠️</div>
+          <h2 className="text-xl font-black text-gray-900">Failed to load connections</h2>
+          <p className="text-sm text-red-500 font-medium">
+            {loadError}
+          </p>
+          <Button onClick={() => loadConnections(true, true)} className="mt-4">
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const renderProfileCard = (item: ConnectionItem, type: "invites" | "matches" | "sent") => {
     const profile = item.profile;
     const { whatsapp_number, linkedin_url } = resolveProfileContacts(profile);
     const isActionLoading = actionLoading[profile.id];
+
+    // For mutual match cards: check if we already sent a PENDING invite to this person
+    const alreadySentInvite = sentInvitations.some(
+      inv => inv.recipient_profile_id === profile.id && inv.status === 'PENDING'
+    );
+    const isSendingInvite = inviteActionLoading[profile.id];
+
+    const normalizedWhatsapp = whatsapp_number ? normalizeWhatsapp(whatsapp_number) : null;
+    const normalizedLinkedin = linkedin_url ? normalizeLinkUrl(linkedin_url) : null;
 
     return (
       <div key={item.id} className="bg-white/70 backdrop-blur-2xl rounded-[24px] border border-white/60 shadow-sm overflow-hidden flex flex-col">
@@ -211,7 +335,7 @@ export default function MatchesPage() {
         {/* Bio (Emphasize collaboration on invites) */}
         {type === "invites" && profile.bio && (
            <div className="px-3 py-2 text-xs text-gray-600 italic text-center border-t border-gray-50 line-clamp-3">
-             "{profile.bio}"
+             &ldquo;{profile.bio}&rdquo;
            </div>
         )}
 
@@ -251,25 +375,69 @@ export default function MatchesPage() {
           </div>
         )}
 
-        {/* Actions based on type */}
-        <div className="p-2 bg-gray-50 border-t border-gray-100 flex gap-2 min-h-[46px] items-center justify-center">
+        {/* Actions */}
+        <div className="p-2 bg-gray-50 border-t border-gray-100 flex flex-col gap-1.5 min-h-[46px]">
           {type === "matches" && (
             <>
-              {whatsapp_number && (
-                <button onClick={() => window.open(`https://wa.me/${whatsapp_number.replace(/\D/g, "")}`)} className="flex-1 py-2 bg-neon-green hover:bg-neon-green/90 text-polar-white rounded-xl flex items-center justify-center transition-colors shadow-sm" title="WhatsApp">
-                  <MessageCircle className="w-4 h-4 mr-1" />
-                  <span className="text-[11px] font-bold">WhatsApp</span>
-                </button>
+              {/* Contact row: WhatsApp + LinkedIn */}
+              {(normalizedWhatsapp || normalizedLinkedin) && (
+                <div className="flex gap-1.5">
+                  {normalizedWhatsapp && (
+                    <a
+                      href={`https://wa.me/${normalizedWhatsapp}?text=${WHATSAPP_MESSAGE}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 py-2 bg-neon-green hover:bg-neon-green/90 text-polar-white rounded-xl flex items-center justify-center transition-colors shadow-sm"
+                      title="WhatsApp"
+                    >
+                      <MessageCircle className="w-4 h-4 mr-1" />
+                      <span className="text-[11px] font-bold">WhatsApp</span>
+                    </a>
+                  )}
+                  {normalizedLinkedin && (
+                    <a
+                      href={normalizedLinkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 py-2 bg-dark-carbon hover:bg-midnight-void text-absolute-zero rounded-xl flex items-center justify-center transition-colors shadow-sm"
+                      title="LinkedIn"
+                    >
+                      <Briefcase className="w-4 h-4 mr-1" />
+                      <span className="text-[11px] font-bold">LinkedIn</span>
+                    </a>
+                  )}
+                </div>
               )}
-              {linkedin_url && (
-                <button onClick={() => window.open(linkedin_url)} className="flex-1 py-2 bg-dark-carbon hover:bg-midnight-void text-absolute-zero rounded-xl flex items-center justify-center transition-colors shadow-sm" title="LinkedIn">
-                  <Briefcase className="w-4 h-4 mr-1" />
-                  <span className="text-[11px] font-bold">LinkedIn</span>
-                </button>
+              {!normalizedWhatsapp && !normalizedLinkedin && (
+                <div className="py-1.5 text-xs text-center text-gray-400 font-medium italic">No links provided</div>
               )}
-              {!whatsapp_number && !linkedin_url && (
-                <div className="flex-1 py-2 text-xs text-center text-gray-400 font-medium italic">No links provided</div>
-              )}
+
+              {/* Invite to Team row */}
+              <button
+                disabled={alreadySentInvite || isSendingInvite}
+                onClick={() => handleSendTeamInvite(profile.id)}
+                className={cn(
+                  "w-full py-2 rounded-xl flex items-center justify-center transition-colors shadow-sm gap-1.5",
+                  alreadySentInvite
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200"
+                )}
+                title={alreadySentInvite ? "Invite already sent" : "Invite to Team"}
+              >
+                {alreadySentInvite ? (
+                  <>
+                    <Users className="w-3.5 h-3.5" />
+                    <span className="text-[11px] font-bold">Invite Sent</span>
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span className="text-[11px] font-bold">
+                      {isSendingInvite ? "Sending..." : "Invite to Team"}
+                    </span>
+                  </>
+                )}
+              </button>
             </>
           )}
 
@@ -328,6 +496,69 @@ export default function MatchesPage() {
         <p className="text-sm text-gray-500 mt-1">Manage your incoming invites and mutual matches</p>
       </div>
 
+      {/* ── Team Invitation Notifications ─────────────────────────────────── */}
+      {teamInvitesReceived.length > 0 && (
+        <div className="mb-6 space-y-3">
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-blue-600" />
+            <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">
+              Team Invitations
+              <span className="ml-2 px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full text-[10px] font-bold">
+                {teamInvitesReceived.length}
+              </span>
+            </h2>
+          </div>
+          <div className="space-y-2">
+            {teamInvitesReceived.map(inv => {
+              const sender = inv.sender as any;
+              const team = inv.team as any;
+              const isActing = inviteActionLoading[inv.id];
+              return (
+                <div
+                  key={inv.id}
+                  className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-center justify-between gap-3"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {sender?.avatar_url ? (
+                      <img src={sender.avatar_url} alt={sender.full_name} className="w-9 h-9 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <div className={cn("w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0", getAvatarBg(sender?.full_name ?? ""))}>
+                        {getInitials(sender?.full_name ?? "?")}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-gray-900 truncate">
+                        {sender?.full_name ?? "Someone"}
+                      </p>
+                      <p className="text-xs text-blue-600 font-medium truncate">
+                        invited you to join <span className="font-black">{team?.name ?? "their team"}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      disabled={isActing}
+                      onClick={() => handleDeclineTeamInvite(inv)}
+                      className="px-3 py-1.5 rounded-xl text-xs font-bold bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    >
+                      Decline
+                    </button>
+                    <button
+                      disabled={isActing}
+                      onClick={() => handleAcceptTeamInvite(inv)}
+                      className="px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    >
+                      {isActing ? "Joining..." : "Join Team"}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Tabs ──────────────────────────────────────────────────────────── */}
       <div className="flex border-b border-gray-200 mb-6">
         {renderTabButton("invites", "Invites", incoming.length)}
         {renderTabButton("matches", "Matches", mutual.length)}

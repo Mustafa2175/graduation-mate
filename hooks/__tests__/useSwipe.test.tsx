@@ -89,4 +89,42 @@ describe('useSwipe hook', () => {
     expect(swipesQueries.insertSwipe).toHaveBeenCalledWith('test-id', 'profile-2', 'LEFT')
     expect(swipesQueries.checkMutualMatch).not.toHaveBeenCalled()
   })
+
+  it('should restore card and show error toast on swipe failure', async () => {
+    vi.mocked(swipesQueries.insertSwipe).mockResolvedValue({ data: null, error: { code: '12345', message: 'test error' } } as any)
+    
+    const { result } = renderHook(() => useSwipe())
+    
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 0))
+    })
+    
+    const profileToSwipe = result.current.profiles[result.current.currentIndex]
+    
+    await act(async () => {
+      await result.current.handleSwipe('RIGHT', profileToSwipe)
+    })
+    
+    // Index should revert back to 1
+    expect(result.current.currentIndex).toBe(1)
+  })
+
+  it('should ignore duplicate swipe errors and not restore card', async () => {
+    vi.mocked(swipesQueries.insertSwipe).mockResolvedValue({ data: null, error: { code: '23505', message: 'duplicate' } } as any)
+    
+    const { result } = renderHook(() => useSwipe())
+    
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 0))
+    })
+    
+    const profileToSwipe = result.current.profiles[result.current.currentIndex]
+    
+    await act(async () => {
+      await result.current.handleSwipe('LEFT', profileToSwipe)
+    })
+    
+    // Index should be 0 because error was ignored
+    expect(result.current.currentIndex).toBe(0)
+  })
 })

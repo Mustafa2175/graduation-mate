@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,11 +26,10 @@ import {
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import SkillBadge from "@/components/profile/SkillBadge";
-
-
+import { toast } from "react-hot-toast";
 export default function MyTeamPage() {
   const router = useRouter();
-  const { getFreshUser } = useAuth();
+  const { getFreshUser, isLoading: authLoading } = useAuth();
   const [currentUserId, setCurrentUserId] = useState<string>("");
 
   // Loading & State
@@ -40,6 +39,7 @@ export default function MyTeamPage() {
 
   // Invitation Copy Feedback
   const [copied, setCopied] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Form Details (Project & Recruitment) - Optional
   const [teamName, setTeamName] = useState("");
@@ -52,8 +52,11 @@ export default function MyTeamPage() {
   // Confirm Leave State
   const [confirmLeave, setConfirmLeave] = useState(false);
 
-  const loadTeamData = async (profileId: string) => {
+  const loadTeamData = useCallback(async (profileId: string) => {
+    if (!profileId) return;
+
     try {
+      setLoadError(null);
       const { data: profile } = await getProfileById(profileId);
       if (profile && profile.team_id) {
         const teamData = await getTeamById(profile.team_id);
@@ -98,15 +101,16 @@ export default function MyTeamPage() {
         setTeam(null);
         setTeammates([]);
       }
-    } catch (err) {
-      // Silently catch error loading team dashboard data
+    } catch (err: any) {
+      setLoadError(err.message || "Failed to load team data.");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const hydrateUser = async () => {
+      if (authLoading) return;
       const user = await getFreshUser();
       if (!user) {
         setIsLoading(false);
@@ -114,11 +118,12 @@ export default function MyTeamPage() {
         return;
       }
       setCurrentUserId(user.profileId);
+      setLoadError(null);
       loadTeamData(user.profileId);
     };
 
     hydrateUser();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [authLoading, getFreshUser, loadTeamData, router]);
 
   const handleCopyCode = () => {
     if (!team?.id) return;
@@ -164,8 +169,8 @@ export default function MyTeamPage() {
         const updatedTeam = await getTeamById(team.id);
         setTeam(updatedTeam);
       }
-    } catch (err) {
-      // Silently catch error updating team optional details
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update team details.");
     } finally {
       setIsSavingDetails(false);
     }
@@ -179,8 +184,8 @@ export default function MyTeamPage() {
       setConfirmLeave(false);
       // Re-load to show empty state
       await loadTeamData(currentUserId);
-    } catch (err) {
-      // Silently catch error leaving graduation team
+    } catch (err: any) {
+      toast.error(err.message || "Failed to leave team.");
       setIsLoading(false);
     }
   };
@@ -196,6 +201,23 @@ export default function MyTeamPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-gray-100 rounded-3xl h-80" />
           <div className="bg-gray-100 rounded-3xl h-80" />
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="p-6 h-[calc(100vh-80px)] overflow-y-auto flex flex-col justify-center items-center">
+        <div className="w-full max-w-md bg-white rounded-3xl border border-red-100 p-8 text-center shadow-lg flex flex-col items-center space-y-4">
+          <div className="text-5xl">⚠️</div>
+          <h2 className="text-xl font-black text-gray-900">Failed to load team data</h2>
+          <p className="text-sm text-red-500 font-medium">
+            {loadError}
+          </p>
+          <Button onClick={() => loadTeamData(currentUserId)} className="mt-4">
+            Retry
+          </Button>
         </div>
       </div>
     );

@@ -56,15 +56,25 @@ function Navbar() {
           TeamUp.
         </div>
 
-        <Link
-          href="/profile/setup"
-          className="group relative bg-[var(--brand)] rounded-full px-6 py-2 shadow-[inset_0_-4px_4px_rgba(255,255,255,0.39)] outline-1 outline-[var(--brand)] -outline-offset-1 overflow-hidden pointer-events-auto"
-        >
-          <div className="absolute w-[80%] h-4 left-[10%] top-[1px] bg-gradient-to-b from-[#DEF0FC] to-transparent rounded-[12px] transition-transform duration-300 group-hover:scale-x-105" />
-          <span className="relative z-10 font-sans text-[14px] text-white">
-            Sign up
-          </span>
-        </Link>
+        <div className="flex items-center gap-2 pointer-events-auto">
+          <Link
+            href="/login"
+            className="rounded-full border border-black/10 bg-white/45 px-4 py-2 font-sans text-[14px] text-[#1a1a1a] transition-colors hover:bg-white/70"
+          >
+            Log in
+          </Link>
+
+          <Link
+            href="/profile/setup"
+            aria-label="I don't have an account, sign up"
+            className="group relative bg-[var(--brand)] rounded-full px-5 py-2 shadow-[inset_0_-4px_4px_rgba(255,255,255,0.39)] outline-1 outline-[var(--brand)] -outline-offset-1 overflow-hidden"
+          >
+            <div className="absolute w-[80%] h-4 left-[10%] top-[1px] bg-gradient-to-b from-[#DEF0FC] to-transparent rounded-[12px] transition-transform duration-300 group-hover:scale-x-105" />
+            <span className="relative z-10 font-sans text-[14px] text-white">
+              Sign up
+            </span>
+          </Link>
+        </div>
       </nav>
     </div>
   );

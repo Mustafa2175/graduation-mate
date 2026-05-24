@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabase/client";
 
 const STORAGE_KEY = "teamup_user";
@@ -158,17 +158,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [fetchUser]);
 
-  const getFreshUser = async () => {
+  const getFreshUser = useCallback(async () => {
     return await fetchUser();
-  };
+  }, [fetchUser]);
 
-  const setCurrentUser = (profileId: string, fullName: string) => {
+  const setCurrentUser = useCallback((profileId: string, fullName: string) => {
     const newUser = { profileId, fullName };
     writeCachedUser(newUser);
     setUserState(newUser);
-  };
+  }, []);
 
-  const clearCurrentUser = async () => {
+  const clearCurrentUser = useCallback(async () => {
     markLogoutInProgress();
     removeCachedUser();
     setUserState(null);
@@ -192,10 +192,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     return { error: signOutError };
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({ user, isLoading, getFreshUser, setCurrentUser, clearCurrentUser }),
+    [user, isLoading, getFreshUser, setCurrentUser, clearCurrentUser],
+  );
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, getFreshUser, setCurrentUser, clearCurrentUser }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

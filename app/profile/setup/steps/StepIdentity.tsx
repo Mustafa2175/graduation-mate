@@ -12,7 +12,12 @@ const schema = z.object({
   email: z.string().email('Valid email is required'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   department: z.string().min(1, 'Department is required'),
-  gpa: z.coerce.number().min(0).max(4, 'GPA must be between 0 and 4').optional().or(z.literal('')),
+  gpa: z.coerce
+    .number()
+    .min(2, 'GPA must be at least 2')
+    .max(4, 'GPA must be between 2 and 4')
+    .optional()
+    .or(z.literal('')),
 })
 
 type FormInput = z.input<typeof schema>
@@ -112,8 +117,10 @@ export default function StepIdentity({ draft, onNext }: StepProps) {
         
         <Input
           id="gpa"
-          label="GPA (0–4)"
+          label="GPA (2-4)"
           type="number"
+          min="2"
+          max="4"
           step="0.01"
           placeholder="e.g. 3.5"
           labelClassName="text-black/75 font-semibold text-xs tracking-wider uppercase"

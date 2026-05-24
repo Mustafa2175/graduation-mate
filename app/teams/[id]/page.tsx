@@ -14,6 +14,7 @@ export default function TeamDetailsPage() {
   const teamId = params.id as string;
 
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [team, setTeam] = useState<any>(null);
   const [teammates, setTeammates] = useState<any[]>([]);
 
@@ -25,6 +26,8 @@ export default function TeamDetailsPage() {
     if (!teamId) return;
 
     const loadTeamData = async () => {
+      setLoadError(null);
+      setIsLoading(true);
       try {
         const teamData = await getTeamById(teamId);
         if (teamData) {
@@ -56,8 +59,8 @@ export default function TeamDetailsPage() {
             }
           }
         }
-      } catch (err) {
-        // Silently catch error fetching read-only team details
+      } catch (err: any) {
+        setLoadError(err.message || "Failed to fetch team details.");
       } finally {
         setIsLoading(false);
       }
@@ -80,6 +83,23 @@ export default function TeamDetailsPage() {
           <div className="bg-gray-100 rounded-3xl h-24" />
           <div className="bg-gray-100 rounded-3xl h-60" />
           <div className="bg-gray-100 rounded-3xl h-60" />
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="p-6 h-[calc(100vh-80px)] overflow-y-auto flex flex-col justify-center items-center">
+        <div className="w-full max-w-md bg-white rounded-3xl border border-red-100 p-8 text-center shadow-lg flex flex-col items-center space-y-4">
+          <div className="text-5xl">⚠️</div>
+          <h2 className="text-xl font-black text-gray-900">Failed to load team data</h2>
+          <p className="text-sm text-red-500 font-medium">
+            {loadError}
+          </p>
+          <button onClick={() => window.location.reload()} className="mt-4 px-6 py-2.5 bg-dark-carbon text-absolute-zero font-bold rounded-xl shadow-md hover:bg-midnight-void transition-colors">
+            Retry
+          </button>
         </div>
       </div>
     );

@@ -15,7 +15,7 @@ import type { Profile } from "@/types";
 import { toast } from "react-hot-toast";
 
 export function useSwipe() {
-  const { getFreshUser } = useAuth();
+  const { getFreshUser, isLoading: authLoading } = useAuth();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,6 +26,8 @@ export function useSwipe() {
   const nextCursor = useRef<string | null>(null);
 
   const loadProfiles = useCallback(async () => {
+    if (authLoading) return;
+
     const user = await getFreshUser();
     if (!user) {
       // No localStorage session yet (e.g. just signed up but setCurrentUser
@@ -63,11 +65,11 @@ export function useSwipe() {
     } finally {
       setIsLoading(false);
     }
-  }, [getFreshUser]);
+  }, [authLoading, getFreshUser]);
 
   useEffect(() => {
     loadProfiles();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loadProfiles]);
 
   const handleSwipe = useCallback(async (direction: "RIGHT" | "LEFT", profile: Profile) => {
     const pid = currentProfileId.current;
@@ -76,17 +78,29 @@ export function useSwipe() {
     setCurrentIndex((prev) => prev - 1);
 
     try {
-      await insertSwipe(pid, profile.id, direction);
+      const { error: swipeError } = await insertSwipe(pid, profile.id, direction);
+      
+      if (swipeError && swipeError.code !== '23505') {
+        setCurrentIndex((prev) => prev + 1);
+        toast.error("Failed to swipe. Please try again.");
+        return;
+      }
 
       if (direction === "RIGHT") {
         const isMutual = await checkMutualMatch(pid, profile.id);
         if (isMutual) {
-          await createMatch(pid, profile.id);
-          toast.success(`You matched with ${profile.full_name}!`);
+          const { error: matchError } = await createMatch(pid, profile.id);
+          if (matchError && matchError.code !== '23505') {
+            toast.error("Match created but experienced an error.");
+          } else {
+            toast.success(`You matched with ${profile.full_name}!`);
+          }
         }
       }
     } catch (e) {
-      // Silently catch swipe errors to avoid breaking the UX flow
+      // Catch any unexpected exceptions
+      setCurrentIndex((prev) => prev + 1);
+      toast.error("Failed to swipe. Please try again.");
     }
   }, []);
 

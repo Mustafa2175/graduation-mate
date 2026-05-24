@@ -77,25 +77,31 @@ export default function ProfileSetupPage() {
       setIsSubmitting(true);
       try {
         // 1. Authenticate / Signup
-        const { data: authData, error: signUpError } =
-          await supabase.auth.signUp({
-            email: updatedDraft.email!,
-            password: updatedDraft.password!,
-            options: {
-              data: {
-                full_name: updatedDraft.full_name,
-              },
-            },
-          });
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        let authUserId = currentUser?.id;
 
-        if (signUpError || !authData.user) {
-          throw new Error(
-            signUpError?.message || "Failed to sign up auth user",
-          );
+        if (!authUserId) {
+          const { data: authData, error: signUpError } =
+            await supabase.auth.signUp({
+              email: updatedDraft.email!,
+              password: updatedDraft.password!,
+              options: {
+                data: {
+                  full_name: updatedDraft.full_name,
+                },
+              },
+            });
+
+          if (signUpError || !authData.user) {
+            throw new Error(
+              signUpError?.message || "Failed to sign up auth user",
+            );
+          }
+          authUserId = authData.user.id;
         }
 
         // 2. Update existing profile (created by database trigger)
-        const { data: profile, error } = await updateProfile(authData.user.id, {
+        const { data: profile, error } = await updateProfile(authUserId, {
           full_name: updatedDraft.full_name!,
           department: updatedDraft.department || null,
           gpa: updatedDraft.gpa ? Number(updatedDraft.gpa) : null,
@@ -111,11 +117,18 @@ export default function ProfileSetupPage() {
         if (error || !profile)
           throw new Error(error?.message || "Failed to create profile");
 
+        let normalizedLinkedin = updatedDraft.linkedin_url ? updatedDraft.linkedin_url.trim() : null;
+        if (normalizedLinkedin && !/^https?:\/\//i.test(normalizedLinkedin)) {
+          normalizedLinkedin = `https://${normalizedLinkedin}`;
+        }
+        
+        let normalizedWhatsapp = updatedDraft.whatsapp_number ? updatedDraft.whatsapp_number.replace(/[^\d+]/g, '') : null;
+
         const { error: contactsError } = await upsertProfileContacts(
-          authData.user.id,
+          authUserId,
           {
-            linkedin_url: updatedDraft.linkedin_url || null,
-            whatsapp_number: updatedDraft.whatsapp_number || null,
+            linkedin_url: normalizedLinkedin,
+            whatsapp_number: normalizedWhatsapp,
           },
         );
         if (contactsError)
@@ -160,7 +173,7 @@ export default function ProfileSetupPage() {
         // returns the correct profile ID everywhere (discover, my-team, etc.).
         // The Supabase cookie session handles server-side auth; this entry
         // is the client-side fast-path used by useSwipe and other hooks.
-        setCurrentUser(authData.user.id, updatedDraft.full_name!);
+        setCurrentUser(authUserId, updatedDraft.full_name!);
         toast.success("Welcome to TeamUp!");
         router.replace("/discover");
       } catch (e: any) {
