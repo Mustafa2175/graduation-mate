@@ -75,3 +75,18 @@ supabase/
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
 | None | N/A | N/A |
+
+## Phase 7: Deployment Blockers (Beta Readiness)
+
+**Goal**: Resolve the final two deployment blockers to make the application fully ready for a real student beta.
+
+### T030: Add Next.js Middleware
+- Create `middleware.ts` in the project root.
+- Implement `@supabase/ssr` `updateSession` logic.
+- Protect all routes (`/discover`, `/matches`, `/my-team`, `/profile/*`) by redirecting unauthenticated users to `/login`.
+- Redirect authenticated users trying to access `/login` to `/discover`.
+
+### T031: Gate `resetSwipes` UI
+- Modify `app/discover/page.tsx` to conditionally render the "Reset Queue & Swipe Again" button.
+- Condition: `process.env.NODE_ENV === 'development'`.
+- Ensure it does not break the empty state layout.

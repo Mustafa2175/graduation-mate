@@ -48,3 +48,18 @@
 **Rationale**: `DESIGN.md` already contains comprehensive design tokens (colors, typography, spacing) and Tailwind v4 configuration. Integrating it prevents duplicated UI utilities and ensures UI consistency across all developers' work.
 **Alternatives considered**:
 - Create a new design system from scratch: Rejected because the existing one is highly detailed and fits the application's current brand perfectly.
+
+## 8. Next.js Middleware for Server-Side Auth Guard
+
+**Decision**: Implement `middleware.ts` at the project root using `@supabase/ssr` to intercept and validate sessions server-side.
+**Rationale**: Relying entirely on client-side auth checks (via `useAuth()` + `router.replace`) causes unprotected UI elements (like loading skeletons) to flash before unauthenticated users are redirected. It also fails to refresh Supabase session cookies properly. A middleware validates the session securely on the edge/server and prevents unauthorized access to protected routes cleanly.
+**Alternatives considered**:
+- Continue with client-side only: Unacceptable for beta UX. The flash of protected UI skeletons is jarring.
+- Server Components data fetching guard: Adding a check on every server component is redundant and error-prone compared to a single unified middleware.
+
+## 9. resetSwipes Environment Gating
+
+**Decision**: Conditionally render the "Reset Queue" button in `app/discover/page.tsx` based on `process.env.NODE_ENV === 'development'`.
+**Rationale**: `resetSwipes` is a destructive action designed for development and testing. Exposing the UI button in production leads to unhandled errors (since the server action/query throws an error). It must be hidden from real users.
+**Alternatives considered**:
+- Remove the button entirely: Not ideal, as it's useful for developers testing the swipe mechanics without needing to manually clear DB tables.

@@ -143,17 +143,18 @@ export default function DiscoverPage() {
                 You've seen everyone!
               </h3>
               <p className="text-xs text-neutral-500 max-w-xs mx-auto leading-relaxed">
-                You have reached the end of the student list. To ensure your
-                queue is never empty, reset the queue below to start swiping all
-                users again!
+                You have reached the end of the student list.
+                {process.env.NODE_ENV === 'development' && " To ensure your queue is never empty, reset the queue below to start swiping all users again!"}
               </p>
             </div>
-            <button
-              onClick={resetSwipeQueue}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-brand)] px-8 py-3 text-xs font-bold text-white uppercase tracking-wider hover:bg-[var(--color-brand)]/95 transition-all shadow-[0_4px_16px_rgba(8,113,231,0.2)] cursor-pointer"
-            >
-              🔄 Reset Queue & Swipe Again
-            </button>
+            {process.env.NODE_ENV === 'development' && (
+              <button
+                onClick={resetSwipeQueue}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-brand)] px-8 py-3 text-xs font-bold text-white uppercase tracking-wider hover:bg-[var(--color-brand)]/95 transition-all shadow-[0_4px_16px_rgba(8,113,231,0.2)] cursor-pointer"
+              >
+                🔄 Reset Queue & Swipe Again
+              </button>
+            )}
           </div>
         ) : (
           <>
