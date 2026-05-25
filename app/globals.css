@@ -1,84 +1,184 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@100..900&display=swap');
-@import url('https://db.onlinewebfonts.com/c/440b53b1a1c65037f944ff19259d8014?family=Nokia+Cellphone+FC+Small');
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@100..900&display=swap");
+@import url("https://db.onlinewebfonts.com/c/440b53b1a1c65037f944ff19259d8014?family=Nokia+Cellphone+FC+Small");
 @import "tailwindcss";
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --color-brand: #0871E7;
+  --radius-card: 16px;
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-instrument: "Instrument Serif", serif;
-  --font-serif: "Instrument Serif", serif;
-  --font-sans: "Inter", sans-serif;
-  --font-nokia: "Nokia Cellphone FC Small", monospace;
+@theme {
+  /* Colors */
+  --color-midnight-void: #101010;
+  --color-deep-space: #080808;
+  --color-polar-white: #F3F3F3;
+  --color-absolute-zero: #FFFFFF;
+  --color-ash-gray: #949494;
+  --color-dark-carbon: #333333;
+  --color-slate: #C1C1C1;
+  --color-light-gradients: #B5B5B5;
+  --color-amber-glow: #E7C59A;
+  --color-neon-green: #00AC5C;
+
+  /* Typography */
+  --font-aeonik: 'Aeonik', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-input: 'Input', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Typography — Scale */
+  --text-caption: 13px;
+  --leading-caption: 1.43;
+  --tracking-caption: -0.007px;
+  --text-subheading: 18px;
+  --leading-subheading: 1.28;
+  --text-heading-sm: 21px;
+  --leading-heading-sm: 1.22;
+  --text-heading: 23px;
+  --leading-heading: 1.11;
+  --text-heading-lg: 34px;
+  --leading-heading-lg: 1.07;
+  --text-display: 44px;
+  --leading-display: 1.03;
+  --text-display-lg: 63px;
+  --leading-display-lg: 0.95;
+  --tracking-display-lg: -0.011px;
+
+  /* Spacing */
+  --spacing-4: 4px;
+  --spacing-8: 8px;
+  --spacing-12: 12px;
+  --spacing-16: 16px;
+  --spacing-20: 20px;
+  --spacing-24: 24px;
+  --spacing-40: 40px;
+
+  /* Border Radius */
+  --radius-md: 4.5px;
+  --radius-lg: 8px;
+  --radius-2xl: 20px;
+  --radius-full: 99px;
 }
 
 @utility font-instrument {
-  font-family: var(--font-instrument);
+    font-family: var(--font-instrument);
 }
 
 @utility font-sans {
-  font-family: var(--font-sans);
+    font-family: var(--font-sans);
 }
 
 @utility font-nokia {
-  font-family: var(--font-nokia);
+    font-family: var(--font-nokia);
+}
+
+@utility pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 16px);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    video {
+        display: none !important;
+    }
 }
 
 /* Velorah Liquid Glass Utility */
 .liquid-glass {
-  background: rgba(255, 255, 255, 0.02);
-  background-blend-mode: luminosity;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05), 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-  position: relative;
-  overflow: hidden;
+    background: rgba(255, 255, 255, 0.02);
+    background-blend-mode: luminosity;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.05),
+        0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
 }
 .liquid-glass::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1.4px;
-  background: linear-gradient(180deg,
-    rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.08) 20%,
-    rgba(255,255,255,0) 40%, rgba(255,255,255,0) 60%,
-    rgba(255,255,255,0.08) 80%, rgba(255,255,255,0.25) 100%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.4px;
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.25) 0%,
+        rgba(255, 255, 255, 0.08) 20%,
+        rgba(255, 255, 255, 0) 40%,
+        rgba(255, 255, 255, 0) 60%,
+        rgba(255, 255, 255, 0.08) 80%,
+        rgba(255, 255, 255, 0.25) 100%
+    );
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
 }
 
 /* Velorah Cinematic Animations */
 @keyframes fade-rise {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
-.animate-fade-rise { animation: fade-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
-.animate-fade-rise-delay { animation: fade-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both; }
-.animate-fade-rise-delay-2 { animation: fade-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both; }
+.animate-fade-rise {
+    animation: fade-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-fade-rise-delay {
+    animation: fade-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+}
+.animate-fade-rise-delay-2 {
+    animation: fade-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
 
 /* Aethera Light-Glass Utility */
 .light-glass {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow:
+        0 10px 40px -10px rgba(0, 0, 0, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
-
+/* Atmospheric Background Gradient */
+@keyframes atmospheric-pan {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.bg-atmospheric {
+  background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 25%, #ffffff 50%, #f0fdfa 75%, #f8fafc 100%);
+  background-size: 200% 200%;
+  animation: atmospheric-pan 25s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bg-atmospheric {
+    animation: none;
+    background-position: center;
+  }
+}

@@ -158,7 +158,7 @@ export default function StepTrack({ draft, onNext, onBack }: StepProps) {
             />
             
             {isOpen && filteredOptions.length > 0 && (
-              <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border border-black/5 bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-none">
+              <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border border-black/5 bg-white py-1 text-sm shadow-sm ring-1 ring-black/5 focus:outline-none">
                 {filteredOptions.map((option, index) => (
                   <li
                     key={option}
@@ -167,7 +167,7 @@ export default function StepTrack({ draft, onNext, onBack }: StepProps) {
                     className={cn(
                       "relative cursor-pointer select-none px-4 py-2.5 transition-colors text-black",
                       highlightedIndex === index
-                        ? "bg-violet-600 text-white font-semibold"
+                        ? "bg-[var(--brand)] text-white font-semibold"
                         : "hover:bg-neutral-50"
                     )}
                   >

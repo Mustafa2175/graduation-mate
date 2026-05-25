@@ -5,13 +5,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { loginLookup } from '@/lib/queries/profiles'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
+import { useAuth } from '@/hooks/useAuth'
 import Input from '@/components/ui/Input'
 import { useState, useEffect, useRef } from 'react'
+import { supabase } from '@/lib/supabase/client'
 
 const schema = z.object({
-  fullName: z.string().min(1, 'Full name is required'),
+  email: z.string().email('Valid email is required'),
   password: z.string().min(1, 'Password is required'),
 })
 
@@ -19,7 +19,7 @@ type FormData = z.infer<typeof schema>
 
 export default function LoginPage() {
   const router = useRouter()
-  const { setCurrentUser } = useCurrentUser()
+  const { setCurrentUser } = useAuth()
   const [serverError, setServerError] = useState('')
   const videoRef = useRef<HTMLVideoElement>(null)
   const [videoOpacity, setVideoOpacity] = useState(0)
@@ -32,12 +32,24 @@ export default function LoginPage() {
 
   const onSubmit = async (data: FormData) => {
     setServerError('')
-    const { data: profile, error } = await loginLookup(data.fullName, data.password)
-    if (error || !profile) {
-      setServerError('Name or password incorrect')
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    })
+
+    if (error || !authData.user) {
+      setServerError('Email or password incorrect')
       return
     }
-    setCurrentUser(profile.id, profile.full_name)
+
+    // Get the profile to cache the full name
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', authData.user.id)
+      .single()
+
+    setCurrentUser(authData.user.id, profile?.full_name || 'User')
     router.replace('/discover')
   }
 
@@ -126,14 +138,15 @@ export default function LoginPage() {
         <div className="light-glass rounded-3xl p-6 sm:p-8 border border-black/5 shadow-2xl">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <Input
-              id="fullName"
-              label="Full Name *"
-              placeholder="Your full name"
-              autoComplete="name"
+              id="email"
+              label="Email *"
+              type="email"
+              placeholder="Your university email"
+              autoComplete="email"
               labelClassName="text-black/75 font-semibold text-xs tracking-wider uppercase"
               className="bg-black/[0.02] border-black/10 text-black placeholder-black/30 focus:border-black/35 focus:ring-1 focus:ring-black focus:bg-white"
-              {...register('fullName')}
-              error={errors.fullName?.message}
+              {...register('email')}
+              error={errors.email?.message}
             />
             <Input
               id="password"
